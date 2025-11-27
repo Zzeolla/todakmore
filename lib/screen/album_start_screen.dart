@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
+import 'package:todakmore/widget/album_create_sheet.dart';
 import 'package:todakmore/widget/common_app_bar.dart';
+import 'package:path/path.dart' as p;
 
 class AlbumStartScreen extends StatefulWidget {
   const AlbumStartScreen({super.key});
@@ -290,9 +294,7 @@ class _AlbumStartScreenState extends State<AlbumStartScreen> {
                       child: OutlinedButton(
                         onPressed:
                             hasName
-                                ? () {
-                                  // TODO: 새 앨범 생성 로직으로 이동
-                                }
+                                ? () => _onCreateAlbumPressed(context)
                                 : _showNeedNameSnack,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF4A4A4A),
@@ -331,6 +333,48 @@ class _AlbumStartScreenState extends State<AlbumStartScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _onCreateAlbumPressed(BuildContext context) async {
+    // 1. 앨범 생성 바텀시트 띄우기
+    final formData = await showModalBottomSheet<AlbumCreateFormData>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return const AlbumCreateSheetContent();
+      },
+    );
+
+    // 사용자가 취소한 경우
+    if (formData == null) return;
+
+
+    // 2. Provider 통해 앨범 + 커버 생성
+    final albumProvider = context.read<AlbumProvider>();
+
+    final created = await albumProvider.createAlbum(
+      name: formData.name,
+      ownerLabel: formData.label,
+      coverFile: formData.coverImage, // ← File? 타입이라고 가정
+    );
+
+    if (created == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('앨범 생성 중 오류가 발생했습니다. 다시 시도해 주세요.')),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+
+    // 3. 메인 화면으로 이동
+    Navigator.pushReplacementNamed(
+      context,
+      '/main',
+      arguments: created.id, // 필요하면 albumId 넘기기
     );
   }
 }

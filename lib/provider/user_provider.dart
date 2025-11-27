@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todakmore/model/user_model.dart';
 
+// TODO : retention을 permission할 때 추가 필요(삭제 기간임)
 class UserProvider extends ChangeNotifier {
   final SupabaseClient _client = Supabase.instance.client;
 

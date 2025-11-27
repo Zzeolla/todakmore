@@ -9,6 +9,16 @@ class UserModel {
     this.createdAt,
   });
 
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'] as String,
+      displayName: json['display_name'] as String?,
+      createdAt: json['created_ad'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -17,13 +27,15 @@ class UserModel {
     };
   }
 
-  factory UserModel.fromJson(Map<String, dynamic> json) {
+  UserModel copyWith({
+    String? id,
+    String? displayName,
+    DateTime? createdAt,
+  }) {
     return UserModel(
-      id: json['id'] as String,
-      displayName: json['display_name'] as String?,
-      createdAt: json['created_ad'] != null
-          ? DateTime.parse(json['created_at'])
-          : null,
+      id: id ?? this.id,
+      displayName: displayName ?? this.displayName,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

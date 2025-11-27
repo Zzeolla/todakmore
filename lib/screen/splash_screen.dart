@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -44,24 +45,20 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    // TODO: 여기에 나중에 "앨범 존재 여부"를 DB에서 조회하는 로직을 만들어서 있으면 main, 없으면 album-start로
+    // 3) 앨범 불러오기
+    final albumProvider = context.read<AlbumProvider>();
+    await albumProvider.loadAlbums();
 
-    Navigator.of(context).pushReplacementNamed('/main');
-    // Navigator.of(context).pushReplacementNamed('/album-start');
+    if (!mounted) return;
 
-    // final hasName = userProvider.displayName != null &&
-    //     userProvider.displayName!.trim().isNotEmpty;
-    //
-    // // 3) display_name 없으면 → 이름 의무 입력 화면
-    // if (!hasName) {
-    //   Navigator.of(context).pushReplacementNamed('/name-required');
-    // } else {
-    //   // TODO: 여기서 나중에 "앨범 존재 여부"를 DB에서 조회해서
-    //   // 4) 이름 있으면 → 앨범 시작 화면(또는 메인)
-    //   //    아직 앨범 구조 안 만들었으니까 우선 /album-start로 보내는 걸로!
-    //   Navigator.of(context).pushReplacementNamed('/album-start');
-    //   // 만약 바로 메인으로 가고 싶으면 위 줄을 '/main'으로 바꾸면 됨.
-    // }
+    // 4) 앨범 존재 여부에 따라 분기
+    if (albumProvider.albums.isNotEmpty) {
+      // 앨범 있음 → 메인으로
+      Navigator.of(context).pushReplacementNamed('/main');
+    } else {
+      // 앨범 없음 → 앨범 시작 화면(초대코드 입력 or 새 앨범 생성)
+      Navigator.of(context).pushReplacementNamed('/album-start');
+    }
   }
 
   // ─────────────────────────────────

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/screen/feed_screen.dart';
 import 'package:todakmore/screen/more_screen.dart';
 import 'package:todakmore/screen/todak_screen.dart';
+import 'package:todakmore/widget/album_invite_share_sheet.dart';
 import 'package:todakmore/widget/common_app_bar.dart';
 
 class MainScreen extends StatefulWidget {
@@ -16,12 +15,51 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
+  bool _initialized = false;
+  String? _initialAlbumId;
+
   // 나중에 각각 별도 파일로 분리해도 됨 (FeedScreen, TodakScreen, MoreScreen)
   final List<Widget> _screens = [
     FeedScreen(),
     TodakScreen(),
     MoreScreen(),
   ];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_initialized) {
+      _initialized = true;
+
+      // 1) 라우트 arguments에서 albumId 가져오기
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is String) {
+        _initialAlbumId = args;
+
+        // 2) 프레임 그려진 뒤에 바텀시트 띄우기
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showInviteSheetIfNeeded();
+        });
+      }
+    }
+  }
+
+  Future<void> _showInviteSheetIfNeeded() async {
+    if (!mounted) return;
+    if (_initialAlbumId == null) return;
+
+    final albumId = _initialAlbumId!;
+    // 한 번만 쓰고 지워버리기
+    _initialAlbumId = null;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AlbumInviteShareSheet(albumId: albumId),
+    );
+  }
 
   void _onItemTapped(int index) {
     setState(() {

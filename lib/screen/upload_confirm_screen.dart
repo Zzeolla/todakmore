@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:todakmore/provider/feed_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/service/album_upload_service.dart';
@@ -258,8 +259,11 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('업로드가 완료되었어요.')),
       );
+      await context.read<FeedProvider>().loadInitial();
 
-      Navigator.pop(context); // TODO: 필요하면 더 상위까지 pop
+      if (!mounted) return;
+
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

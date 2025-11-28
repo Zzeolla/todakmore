@@ -8,12 +8,14 @@ class UserProvider extends ChangeNotifier {
 
   UserModel? _currentUser;
   bool _isLoaded = false;
+  bool _hasAnyOwnerOrManager = false;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoaded => _isLoaded;
   String? get userId => _currentUser?.id;
   String? get displayName => _currentUser?.displayName;
   String? get lastAlbumId => _currentUser?.lastAlbumId;
+  bool get hasAnyOwnerOrManager => _hasAnyOwnerOrManager;
 
   /// 로그인된 유저 기준으로 users row 불러오거나 생성
   Future<void> loadOrCreateUser() async {
@@ -49,6 +51,8 @@ class UserProvider extends ChangeNotifier {
       // 3) 있으면 UserModel로 파싱
       _currentUser = UserModel.fromJson(data);
     }
+
+    await refreshAlbumManagePermission();
 
     _isLoaded = true;
     notifyListeners();
@@ -101,6 +105,37 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 내 계정 기준으로 owner/manager 앨범이 하나라도 있는지 체크
+  Future<void> refreshAlbumManagePermission() async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) {
+      _hasAnyOwnerOrManager = false;
+      notifyListeners();
+      return;
+    }
+    // TODO: 이거 나중에 내가 manager 권한 줄 때도 꼭 refresh 해줘야 하는데 상대방이 refresh가 되어야 하네 ㅎㅎ
+
+    final uid = authUser.id;
+
+    try {
+      final result = await _client
+          .from('album_members')
+          .select('id')
+          .eq('user_id', uid)
+          .inFilter('role', ['owner', 'manager'])
+          .limit(1); // 하나만 있으면 되니까
+
+      _hasAnyOwnerOrManager = result.isNotEmpty;
+      notifyListeners();
+    } catch (e, st) {
+      if (kDebugMode) {
+        print('refreshAlbumManagePermission error: $e');
+        print(st);
+      }
+      _hasAnyOwnerOrManager = false;
+      notifyListeners();
+    }
+  }
 
   /// 로그아웃 시 초기화 (옵션)
   void clear() {

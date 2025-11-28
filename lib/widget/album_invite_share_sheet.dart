@@ -103,7 +103,7 @@ class _AlbumInviteShareSheetState extends State<AlbumInviteShareSheet> {
             ),
             const SizedBox(height: 6),
             const Text(
-              '이 코드는 20분 후 만료됩니다',
+              '이 코드는 20분 후 만료됩니다\n만료 후 재생성 가능합니다',
               style: TextStyle(fontSize: 13, color: Colors.black54),
             ),
 
@@ -134,18 +134,38 @@ class _AlbumInviteShareSheetState extends State<AlbumInviteShareSheet> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: _copyCode,
-                    icon: const Icon(Icons.copy, size: 18),
-                    label: const Text('코드 복사'),
+                    icon: const Icon(Icons.copy, size: 18, color: Colors.white),
+                    label: const Text(
+                      '코드 복사',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF81),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    )
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: _shareCode,
-                    icon: const Icon(Icons.share, size: 18),
-                    label: const Text('공유하기'),
+                    icon: const Icon(Icons.share, size: 18, color: Colors.white),
+                    label: const Text(
+                      '공유하기',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF81),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
                   ),
                 ),
               ],

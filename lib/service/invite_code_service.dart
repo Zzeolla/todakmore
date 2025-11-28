@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:todakmore/model/album_member_model.dart';
 
 class InviteCodeService {
   static final client = Supabase.instance.client;
@@ -79,5 +80,32 @@ class InviteCodeService {
     );
 
     await SharePlus.instance.share(params);
+  }
+
+  /// 5. 초대코드로 앨범 참여 (album_members에 추가)
+  static Future<void> joinAlbumByInviteCode(String code, String label) async {
+    // 1) 코드 유효성 검사 (만료 포함)
+    final data = await verifyInviteCode(code);
+    if (data == null) {
+      throw Exception('Invalid or expired invite code');
+    }
+
+    final albumId = data['album_id'] as String;
+
+    // 2) 현재 로그인 유저 확인
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('Not authenticated');
+    }
+
+    // 3) album_members에 viewer로 추가 (role은 정책에 맞게 수정 가능)
+    final member = AlbumMemberModel(
+      albumId: albumId,
+      userId: userId,
+      role: 'viewer',
+      label: label,
+    );
+
+    await client.from('album_members').insert(member.toInsertMap());
   }
 }

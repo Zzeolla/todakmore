@@ -47,7 +47,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // 3) 앨범 불러오기
     final albumProvider = context.read<AlbumProvider>();
-    await albumProvider.loadAlbums();
+    await albumProvider.loadAlbums(preferredAlbumId: userProvider.lastAlbumId);
 
     if (!mounted) return;
 
@@ -73,17 +73,10 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // 로고
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFC6B6FF), // Todak Lavender
-                borderRadius: BorderRadius.circular(40),
-              ),
-              child: const Icon(
-                Icons.child_friendly,
-                size: 72,
-                color: Colors.white,
-              ),
+            Image.asset(
+              'assets/icon/splash_icon.png',
+              width: 120,
+              height: 120,
             ),
             const SizedBox(height: 24),
             const Text(

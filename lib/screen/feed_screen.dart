@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:todakmore/widget/feed_card.dart';
 
 class FeedScreen extends StatelessWidget {
   const FeedScreen({super.key});
@@ -6,14 +7,20 @@ class FeedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Text(
-          '피드 화면 (사진 타임라인)',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F7F9), // 아주 옅은 배경
+      body: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        itemCount: 10, // 임시
+        itemBuilder: (context, index) {
+          return const FeedCard();
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/upload-select');
+        },
+        child: const Icon(Icons.add_a_photo),
       ),
     );
   }

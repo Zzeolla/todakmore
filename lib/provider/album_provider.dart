@@ -19,6 +19,7 @@ class AlbumProvider extends ChangeNotifier {
   AlbumWithMyInfoModel? get selectedAlbum => _selectedAlbum;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  String? get selectedAlbumId => _selectedAlbum?.id;
 
   // ───────── 내부 상태 업데이트 헬퍼 ─────────
   void _setLoading(bool value) {
@@ -32,7 +33,7 @@ class AlbumProvider extends ChangeNotifier {
   }
 
   // ───────── 1) 앨범 목록 불러오기 ─────────
-  Future<void> loadAlbums() async {
+  Future<void> loadAlbums({String? preferredAlbumId}) async {
     _setLoading(true);
     _setError(null);
 
@@ -47,11 +48,18 @@ class AlbumProvider extends ChangeNotifier {
           .map((row) => AlbumWithMyInfoModel.fromMap(row as Map<String, dynamic>))
           .toList();
 
-      // 선택된 앨범이 없으면 첫 번째로 세팅
-      if (_albums.isNotEmpty && _selectedAlbum == null) {
-        _selectedAlbum = _albums.first;
-      } else if (_albums.isEmpty) {
+      if (_albums.isEmpty) {
         _selectedAlbum = null;
+      } else {
+        if (preferredAlbumId != null) {
+          try {
+            _selectedAlbum = _albums.firstWhere((a) => a.id == preferredAlbumId);
+          } catch (_) {
+            _selectedAlbum ??= _albums.first;
+          }
+        } else {
+          _selectedAlbum ??= _albums.first;
+        }
       }
 
       notifyListeners();
@@ -163,7 +171,7 @@ class AlbumProvider extends ChangeNotifier {
   }
 
   // ───────── 3) 앨범 선택 ─────────
-  void selectAlbum(AlbumWithMyInfoModel album) {
+  Future<void> selectAlbum(AlbumWithMyInfoModel album) async {
     _selectedAlbum = album;
     notifyListeners();
   }

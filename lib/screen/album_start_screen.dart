@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/widget/album_create_sheet.dart';
 import 'package:todakmore/widget/album_invite_join_sheet.dart';
 import 'package:todakmore/widget/common_app_bar.dart';
-import 'package:path/path.dart' as p;
 
 class AlbumStartScreen extends StatefulWidget {
   const AlbumStartScreen({super.key});
@@ -356,6 +354,7 @@ class _AlbumStartScreenState extends State<AlbumStartScreen> {
 
 
     // 2. Provider 통해 앨범 + 커버 생성
+    final userProvider = context.read<UserProvider>();
     final albumProvider = context.read<AlbumProvider>();
 
     final created = await albumProvider.createAlbum(
@@ -363,6 +362,10 @@ class _AlbumStartScreenState extends State<AlbumStartScreen> {
       ownerLabel: formData.label,
       coverFile: formData.coverImage, // ← File? 타입이라고 가정
     );
+
+    if (created != null) {
+      await userProvider.updateLastAlbumId(created.id);
+    }
 
     if (created == null) {
       if (!mounted) return;

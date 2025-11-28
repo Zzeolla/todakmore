@@ -83,7 +83,7 @@ class InviteCodeService {
   }
 
   /// 5. 초대코드로 앨범 참여 (album_members에 추가)
-  static Future<void> joinAlbumByInviteCode(String code, String label) async {
+  static Future<String> joinAlbumByInviteCode(String code, String label) async {
     // 1) 코드 유효성 검사 (만료 포함)
     final data = await verifyInviteCode(code);
     if (data == null) {
@@ -107,5 +107,7 @@ class InviteCodeService {
     );
 
     await client.from('album_members').insert(member.toInsertMap());
+
+    return albumId;
   }
 }

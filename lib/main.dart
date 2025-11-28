@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todakmore/provider/album_provider.dart';
@@ -7,6 +8,8 @@ import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/screen/album_start_screen.dart';
 import 'package:todakmore/screen/login_screen.dart';
 import 'package:todakmore/screen/main_screen.dart';
+import 'package:todakmore/screen/upload_confirm_screen.dart';
+import 'package:todakmore/screen/upload_select_screen.dart';
 import 'package:todakmore/screen/splash_screen.dart';
 
 void main() async {
@@ -48,6 +51,17 @@ class TodakmoreApp extends StatelessWidget {
         '/login' : (_) => const LoginScreen(),
         '/album-start' : (_) => const AlbumStartScreen(),
         '/main' : (_) => const MainScreen(),
+        '/upload-select' : (_) => const UploadSelectScreen()
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/upload-confirm') {
+          final assets = settings.arguments as List<AssetEntity>;
+
+          return MaterialPageRoute(
+            builder: (_) => UploadConfirmScreen(assets: assets),
+          );
+        }
+        return null;
       },
     );
   }

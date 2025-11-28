@@ -13,6 +13,7 @@ class UserProvider extends ChangeNotifier {
   bool get isLoaded => _isLoaded;
   String? get userId => _currentUser?.id;
   String? get displayName => _currentUser?.displayName;
+  String? get lastAlbumId => _currentUser?.lastAlbumId;
 
   /// 로그인된 유저 기준으로 users row 불러오거나 생성
   Future<void> loadOrCreateUser() async {
@@ -42,6 +43,7 @@ class UserProvider extends ChangeNotifier {
         id: uid,
         displayName: null,
         createdAt: DateTime.now(),
+        lastAlbumId: null,
       );
     } else {
       // 3) 있으면 UserModel로 파싱
@@ -66,15 +68,39 @@ class UserProvider extends ChangeNotifier {
         .update({'display_name': name})
         .eq('id', uid);
 
-    // 로컬 상태 업데이트
-    _currentUser = UserModel(
-      id: uid,
-      displayName: name,
-      createdAt: _currentUser?.createdAt,
-    );
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(displayName: name);
+    } else {
+      _currentUser = UserModel(
+        id: uid,
+        displayName: name,
+        createdAt: DateTime.now(),
+        lastAlbumId: null,
+      );
+    }
 
     notifyListeners();
   }
+
+  Future<void> updateLastAlbumId(String albumId) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) return;
+
+    final uid = authUser.id;
+
+    await _client
+        .from('users')
+        .update({'last_album_id': albumId})
+        .eq('id', uid);
+
+    if (_currentUser != null) {
+      // copyWith 있으면 이렇게
+      _currentUser = _currentUser!.copyWith(lastAlbumId: albumId);
+    }
+
+    notifyListeners();
+  }
+
 
   /// 로그아웃 시 초기화 (옵션)
   void clear() {

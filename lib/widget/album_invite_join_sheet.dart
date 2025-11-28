@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/service/invite_code_service.dart';
 
 class AlbumInviteJoinSheet extends StatefulWidget {
@@ -103,9 +105,12 @@ class _AlbumInviteJoinSheetState extends State<AlbumInviteJoinSheet> {
     }
 
     try {
-      await InviteCodeService.joinAlbumByInviteCode(code, label);
+      final joinedAlbumId = await InviteCodeService.joinAlbumByInviteCode(code, label);
 
       if (!mounted) return;
+
+      final userProvider = context.read<UserProvider>();
+      await userProvider.updateLastAlbumId(joinedAlbumId);
 
       // SplashScreen(초기 라우트)로 이동해서 상태 초기화
       Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);

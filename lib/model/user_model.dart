@@ -2,11 +2,13 @@ class UserModel {
   final String id;
   final String? displayName;
   final DateTime? createdAt;
+  final String? lastAlbumId;
 
   UserModel({
     required this.id,
     this.displayName,
     this.createdAt,
+    this.lastAlbumId,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -16,6 +18,7 @@ class UserModel {
       createdAt: json['created_ad'] != null
           ? DateTime.parse(json['created_at'])
           : null,
+      lastAlbumId: json['last_album_id'] as String?,
     );
   }
 
@@ -24,6 +27,7 @@ class UserModel {
       'id': id,
       'display_name': displayName,
       'created_at': createdAt?.toIso8601String(),
+      'last_album_id': lastAlbumId,
     };
   }
 
@@ -31,11 +35,13 @@ class UserModel {
     String? id,
     String? displayName,
     DateTime? createdAt,
+    String? lastAlbumId,
   }) {
     return UserModel(
       id: id ?? this.id,
       displayName: displayName ?? this.displayName,
       createdAt: createdAt ?? this.createdAt,
+      lastAlbumId: lastAlbumId ?? this.lastAlbumId,
     );
   }
 }

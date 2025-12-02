@@ -11,7 +11,7 @@ class FeedScreen extends StatefulWidget {
   @override
   State<FeedScreen> createState() => _FeedScreenState();
 }
-
+// TODO : 광고 추가할 예정이며 광고 추가하면 반드시 구글플레이콘솔에서 정보 바꿔야함
 class _FeedScreenState extends State<FeedScreen> {
   final ScrollController _scrollController = ScrollController();
 

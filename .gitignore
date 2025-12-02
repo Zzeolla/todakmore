@@ -20,6 +20,8 @@ migrate_working_dir/
 android/app/src/main/res/raw/*
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
+/android/key.properties
+/android/upload-keystore.jks
 
 # IntelliJ related
 *.iml

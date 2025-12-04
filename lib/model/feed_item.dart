@@ -28,13 +28,19 @@ class FeedItem extends Equatable {
   });
 
   bool get isVideo => mediaType == 'video';
+  String get displayUrl => thumbUrl?.isNotEmpty == true ? thumbUrl! : url;
 
   // yyyy.MM.dd
-  String get formattedDate {
-    final y = createdAt.year.toString().padLeft(4, '0');
-    final m = createdAt.month.toString().padLeft(2, '0');
-    final d = createdAt.day.toString().padLeft(2, '0');
-    return '$y.$m.$d';
+  String get formattedDateTime {
+    String two(int n) => n.toString().padLeft(2, '0');
+
+    final y = createdAt.year.toString();
+    final m = two(createdAt.month);
+    final d = two(createdAt.day);
+    final h = two(createdAt.hour);
+    final min = two(createdAt.minute);
+
+    return '$y.$m.$d $h:$min';
   }
 
   @override

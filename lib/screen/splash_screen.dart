@@ -1,8 +1,10 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
+import 'package:todakmore/service/fcm_token_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,12 +14,20 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final _supabase = Supabase.instance.client;
+  late final FcmTokenService _fcmTokenService;
 
   @override
   void initState() {
     super.initState();
-    // 화면이 만들어지자마자 로그인/세션 체크 시작
+    _fcmTokenService = FcmTokenService(_supabase);
     _checkAuthAndNavigate();
+  }
+
+  @override
+  void dispose() {
+    _fcmTokenService.stop();   // onTokenRefresh 리스너 정리
+    super.dispose();
   }
 
   // ─────────────────────────────────
@@ -28,8 +38,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // 살짝 로고가 보이도록 500ms 정도 딜레이 (선택사항)
     await Future.delayed(const Duration(milliseconds: 500));
 
-    final supabase = Supabase.instance.client;
-    final session = supabase.auth.currentSession;
+    final session = _supabase.auth.currentSession;
 
     if (!mounted) return;
 
@@ -42,6 +51,8 @@ class _SplashScreenState extends State<SplashScreen> {
     // 2) 로그인 되어 있으면 → users 테이블 로드/생성
     final userProvider = context.read<UserProvider>();
     await userProvider.loadOrCreateUser();
+
+    await _setupFcm(userProvider.userId!);
 
     if (!mounted) return;
 
@@ -60,6 +71,22 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.of(context).pushReplacementNamed('/album-start');
     }
   }
+
+  Future<void> _setupFcm(String userId) async {
+    // 1) 알림 권한 요청 (iOS / Android 13+)
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // 2) 현재 기기 토큰 등록 (upsert)
+    await _fcmTokenService.register(userId);
+
+    // 3) 토큰 변경 시 자동 업데이트
+    _fcmTokenService.listenRefresh(userId);
+  }
+
 
   // ─────────────────────────────────
   // 화면 UI (로고 + 로딩 스피너)

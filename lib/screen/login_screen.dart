@@ -67,17 +67,10 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // 1) 상단 로고 영역
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFC6B6FF), // Todak Lavender
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: const Icon(
-                  Icons.child_friendly,
-                  size: 64,
-                  color: Colors.white,
-                ),
+              Image.asset(
+                'assets/icon/splash_icon.png',
+                width: 120,
+                height: 120,
               ),
               const SizedBox(height: 16),
 

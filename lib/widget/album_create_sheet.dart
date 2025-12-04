@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// 앨범 생성 시 입력받을 값
@@ -9,11 +10,13 @@ class AlbumCreateFormData {
   final String name;
   final String label;
   final File? coverImage;
+  final Uint8List? coverImageBytes;
 
   AlbumCreateFormData({
     required this.name,
     required this.label,
     this.coverImage,
+    this.coverImageBytes,
   });
 }
 
@@ -31,6 +34,7 @@ class _AlbumCreateSheetState extends State<AlbumCreateSheet> {
   final _labelController = TextEditingController();
 
   File? _coverImage;
+  Uint8List? _coverImageBytes;
   bool _hasTempCover = false;
 
   @override
@@ -52,6 +56,7 @@ class _AlbumCreateSheetState extends State<AlbumCreateSheet> {
       name: _nameController.text.trim(),
       label: _labelController.text.trim(),
       coverImage: _coverImage,
+      coverImageBytes: _coverImageBytes,
     );
 
     // 확인 → 입력값을 상위로 넘김
@@ -305,6 +310,7 @@ class _AlbumCreateSheetState extends State<AlbumCreateSheet> {
                       Navigator.pop(context);
                       setState(() {
                         _coverImage = null;
+                        _coverImageBytes = null;
                         _hasTempCover = false;
                       });
                     },
@@ -325,8 +331,20 @@ class _AlbumCreateSheetState extends State<AlbumCreateSheet> {
     final picked = await _safePick(source);
     if (picked == null) return;
 
+    // 1) 원본 bytes 읽기
+    final originalBytes = await picked.readAsBytes();
+
+    // 2) 리사이즈 + 압축 (카드에서 쓸 수준이면 600~800px 정도면 충분)
+    final compressedBytes = await FlutterImageCompress.compressWithList(
+      originalBytes,
+      minWidth: 800,   // 필요에 따라 600~1000 정도로 조절
+      minHeight: 800,
+      quality: 80,     // 0~100, 80이면 충분히 선명 + 용량 절감
+    );
+
     setState(() {
       _coverImage = File(picked.path);
+      _coverImageBytes = compressedBytes;
       _hasTempCover = true;
     });
   }

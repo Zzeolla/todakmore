@@ -47,4 +47,12 @@ class AlbumWithMyInfoModel {
       myLabel: myLabel ?? this.myLabel,
     );
   }
+
+  static const Map<String, String> roleKoLabel = {
+    'owner': '소유자',
+    'manager': '관리자',
+    'viewer': '구성원',
+  };
+
+  String get myRoleLabel => roleKoLabel[myRole] ?? '알 수 없음';
 }

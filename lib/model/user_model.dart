@@ -15,7 +15,7 @@ class UserModel {
     return UserModel(
       id: json['id'] as String,
       displayName: json['display_name'] as String?,
-      createdAt: json['created_ad'] != null
+      createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
       lastAlbumId: json['last_album_id'] as String?,

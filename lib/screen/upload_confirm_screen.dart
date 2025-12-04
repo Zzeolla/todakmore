@@ -7,6 +7,7 @@ import 'package:todakmore/provider/feed_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/service/album_upload_service.dart';
+import 'package:todakmore/service/notification_service.dart';
 
 class UploadConfirmScreen extends StatefulWidget {
   final List<AssetEntity> assets;
@@ -213,6 +214,7 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
 
     final userId = userProvider.userId;          // 너가 쓰는 필드명에 맞게 수정
     final albumId = albumProvider.selectedAlbumId; // 예시: 현재 선택된 앨범 id
+    final albumName = albumProvider.selectedAlbumName;
 
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -237,7 +239,7 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
     final total = widget.assets.length;
 
     try {
-      for (int i = 0; i < total; i++) {
+      for (int i = total - 1; i >= 0; i--) {
         final asset = widget.assets[i];
 
         await AlbumUploadService.uploadSingleAsset(
@@ -253,6 +255,13 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
           setState(() {});
         }
       }
+
+      // 🔔 모든 업로드가 성공한 뒤 → 알림 요청 insert
+      await NotificationService.sendNewPhotoAdded(
+        albumId: albumId,
+        albumName: albumName ?? '토닥모아',
+        createdByUserId: userId,
+      );
 
       if (!mounted) return;
 

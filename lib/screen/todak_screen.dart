@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:todakmore/widget/common_app_bar.dart';
 
 class TodakScreen extends StatelessWidget {
   const TodakScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
+    return Scaffold(
+      appBar: CommonAppBar(),
+      body: Column(
         children: [
           const SizedBox(height: 16),
           Text(

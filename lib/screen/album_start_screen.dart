@@ -360,7 +360,7 @@ class _AlbumStartScreenState extends State<AlbumStartScreen> {
     final created = await albumProvider.createAlbum(
       name: formData.name,
       ownerLabel: formData.label,
-      coverFile: formData.coverImage, // ← File? 타입이라고 가정
+      coverBytes: formData.coverImageBytes, // ← File? 타입이라고 가정
     );
 
     if (created != null) {

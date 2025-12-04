@@ -95,7 +95,7 @@ class FeedProvider extends ChangeNotifier {
         final album = row['albums'];
         if (album == null) continue; // 혹시라도 조인 실패 시
 
-        final createdAt = DateTime.parse(row['created_at'] as String);
+        final createdAt = DateTime.parse(row['created_at'] as String).toLocal();
 
         newItems.add(
           FeedItem(
@@ -130,6 +130,26 @@ class FeedProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> deleteItem(String mediaId) async {
+    try {
+      // 1) Supabase에서 삭제 (실제로는 soft-delete or RLS 정책에 맞게)
+      await _client
+          .from('album_medias')
+          .update({
+            'is_deleted': true,
+            'deleted_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', mediaId);
+
+      // 2) 로컬 리스트에서도 제거
+      _items.removeWhere((e) => e.id == mediaId);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('deleteItem error: $e');
+      // TODO: 에러 스낵바 같은 것 띄워도 좋음
     }
   }
 }

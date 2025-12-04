@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todakmore/model/user_model.dart';
+import 'package:todakmore/service/fcm_token_service.dart';
 
 // TODO : retention을 permission할 때 추가 필요(삭제 기간임)
 class UserProvider extends ChangeNotifier {
@@ -145,6 +146,15 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    final authUser = _client.auth.currentUser;
+
+    if (authUser != null) {
+      final userId = authUser.id;
+
+      final fcmTokenService = FcmTokenService(_client);
+      await fcmTokenService.unregister(userId);
+    }
+
     await _client.auth.signOut();
     clear();
 

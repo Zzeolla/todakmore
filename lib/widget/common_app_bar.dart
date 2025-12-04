@@ -3,8 +3,14 @@ import 'package:provider/provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final bool showBackButton;
+  final VoidCallback? onBack;
 
-  const CommonAppBar({super.key});
+  const CommonAppBar({
+    super.key,
+    this.showBackButton = false,
+    this.onBack,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -15,7 +21,22 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: const Color(0xFFF1F1FD),
       elevation: 0,
       centerTitle: true,
-      leading: const SizedBox(width: 40),
+      leading: showBackButton
+          ? IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 22,
+                color: Colors.black87,
+              ),
+              onPressed: () {
+                if (onBack != null) {
+                  onBack!();
+                } else {
+                  Navigator.pop(context);
+                }
+              },
+            )
+          : const SizedBox(width: 40),
       title: const Text(
         '토닥 모아',
         style: TextStyle(

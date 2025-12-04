@@ -2,57 +2,100 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
+import 'package:todakmore/screen/more/my_profile_panel.dart';
 import 'package:todakmore/widget/album_invite_share_sheet.dart';
+import 'package:todakmore/widget/common_app_bar.dart';
 import 'package:todakmore/widget/more_item_widget.dart';
+import 'package:todakmore/screen/more/album_manage_panel.dart';
 
-class MoreScreen extends StatelessWidget {
+enum MorePage {
+  main,
+  myProfile,
+  albumManage,
+
+}
+
+class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
 
   @override
+  State<MoreScreen> createState() => _MoreScreenState();
+}
+
+class _MoreScreenState extends State<MoreScreen> {
+  MorePage _currentPage = MorePage.main;
+
+  bool get _isRootPage => _currentPage == MorePage.main;
+
+  void _goTo(MorePage page) {
+    setState(() {
+      _currentPage = page;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: CommonAppBar(
+        showBackButton: !_isRootPage,
+        onBack: () {
+          setState(() {
+            _currentPage = MorePage.main;
+          });
+        },
+      ),
+      body: _buildBody(context),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    switch (_currentPage) {
+      case MorePage.main:
+        return _buildMoreMainBody(context);
+      case MorePage.myProfile:
+        return const MyProfilePanel();
+      case MorePage.albumManage:
+        return const AlbumManagePanel();
+    }
+  }
+
+  // ─────────────────────────────
+  // 1) 기본 더보기 화면
+  // ─────────────────────────────
+  Widget _buildMoreMainBody(BuildContext context) {
     final albumProvider = context.watch<AlbumProvider>();
-    final useProvider = context.watch<UserProvider>();
-    final hasPermission = useProvider.hasAnyOwnerOrManager;   // 👈 추가
-    final selectedAlbumId = albumProvider.selectedAlbumId;
+    final userProvider = context.watch<UserProvider>();
+    final hasPermission = userProvider.hasAnyOwnerOrManager;
 
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         children: [
-          Text(
-            '더보기',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 16),
           MoreItemWidget(
             icon: Icons.person_outline_rounded,
             title: '내 프로필',
-            subtitle: '닉네임, 계정 정보',
+            subtitle: '이름, 계정 정보',
             onTap: () {
-              // TODO: 상세 페이지 연결
+              _goTo(MorePage.myProfile);
             },
           ),
+
           MoreItemWidget(
             icon: Icons.photo_album_outlined,
             title: '앨범 관리',
             subtitle: '가족 앨범 초대 / 나가기',
             onTap: () {
-              // TODO: 상세 페이지 연결
+              _goTo(MorePage.albumManage);
             },
           ),
-          // ─────────────────────────────
-          // 초대코드 생성하기 → 바텀시트 호출
-          // ─────────────────────────────
+
           if (hasPermission)
             MoreItemWidget(
               icon: Icons.settings_outlined,
               title: '초대코드 생성하기',
               subtitle: '초대코드 생성하여 가족에게 공유하기',
               onTap: () {
-                final albumProvider = context.read<AlbumProvider>();
-                final albumId = albumProvider.selectedAlbumId; // 말한 그대로 사용
+                final albumId = albumProvider.selectedAlbumId;
 
                 if (albumId == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -73,20 +116,24 @@ class MoreScreen extends StatelessWidget {
                 );
               },
             ),
+
           MoreItemWidget(
             icon: Icons.settings_outlined,
             title: '앱 설정',
             subtitle: '알림, 자동삭제 기간 등',
+            // TODO: 나중에 수정 필요
             onTap: () {
-              // TODO: 상세 페이지 연결
+              _goTo(MorePage.albumManage);
             },
           ),
+
           MoreItemWidget(
             icon: Icons.help_outline_rounded,
             title: '도움말 / 문의',
             subtitle: '문의하기, 사용 방법',
+            // TODO: 나중에 수정 필요
             onTap: () {
-              // TODO: 상세 페이지 연결
+              _goTo(MorePage.albumManage);
             },
           ),
         ],

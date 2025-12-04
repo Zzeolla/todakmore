@@ -3,7 +3,6 @@ import 'package:todakmore/screen/feed_screen.dart';
 import 'package:todakmore/screen/more_screen.dart';
 import 'package:todakmore/screen/todak_screen.dart';
 import 'package:todakmore/widget/album_invite_share_sheet.dart';
-import 'package:todakmore/widget/common_app_bar.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -70,7 +69,6 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CommonAppBar(),
       backgroundColor: const Color(0xFFFFF9F4), // Cream White
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(

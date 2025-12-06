@@ -10,6 +10,7 @@ class UserProvider extends ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoaded = false;
   bool _hasAnyOwnerOrManager = false;
+  int _todakLimit = 30;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoaded => _isLoaded;
@@ -17,6 +18,7 @@ class UserProvider extends ChangeNotifier {
   String? get displayName => _currentUser?.displayName;
   String? get lastAlbumId => _currentUser?.lastAlbumId;
   bool get hasAnyOwnerOrManager => _hasAnyOwnerOrManager;
+  int get todakLimit => _todakLimit;
 
   /// 로그인된 유저 기준으로 users row 불러오거나 생성
   Future<void> loadOrCreateUser() async {
@@ -58,6 +60,18 @@ class UserProvider extends ChangeNotifier {
     _isLoaded = true;
     notifyListeners();
   }
+  // TODO: 나중에 구독 기능이 생길 경우 subscription 테이블 조회 후 아래 함수 호출 필요
+  void applySubscription(String planId) {
+    if (planId == 'free') {
+      _todakLimit = 30;
+    } else if (planId == 'pro') {
+      _todakLimit = 100;
+    } else if (planId == 'premium') {
+      _todakLimit = 300;
+    }
+    notifyListeners();
+  }
+
 
   /// display_name 업데이트
   Future<void> updateDisplayName(String name) async {

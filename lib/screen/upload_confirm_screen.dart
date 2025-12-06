@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:todakmore/model/album_with_my_info_model.dart';
 import 'package:todakmore/provider/feed_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/provider/album_provider.dart';
@@ -20,7 +21,7 @@ class UploadConfirmScreen extends StatefulWidget {
   @override
   State<UploadConfirmScreen> createState() => _UploadConfirmScreenState();
 }
-
+// TODO : 추후 앨범 선택하는거 디자인, 바텀시트 디자인 다시 하기
 class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
   int _currentIndex = 0;
   bool _isUploading = false;
@@ -34,6 +35,10 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
     const todakLavender = Color(0xFFC6B6FF);
     const todakPeach = Color(0xFFFFDDD2);
     const todakText = Color(0xFF444444);
+
+    final albumProvider = context.watch<AlbumProvider>();
+    final manageAlbums = albumProvider.manageAlbums;
+    final selectedAlbum = albumProvider.selectedAlbum;
 
     final total = widget.assets.length;
 
@@ -62,6 +67,79 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
               ),
             ),
           ),
+
+          // 🔹 업로드할 앨범 선택
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+            child: GestureDetector(
+              onTap: manageAlbums.isEmpty
+                  ? null
+                  : () => _showAlbumSelectSheet(
+                context,
+                manageAlbums,
+                selectedAlbum,
+              ),
+              child: Container(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: manageAlbums.isEmpty
+                        ? Colors.grey.shade300
+                        : todakLavender,
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                      color: Colors.black.withOpacity(0.04),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.photo_album_outlined,
+                      size: 20,
+                      color: todakText,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        selectedAlbum?.name ??
+                            (manageAlbums.isEmpty
+                                ? '업로드 가능한 앨범이 없어요'
+                                : '업로드할 앨범을 선택해 주세요'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: manageAlbums.isEmpty
+                              ? Colors.grey
+                              : todakText,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      manageAlbums.isEmpty
+                          ? Icons.block
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: manageAlbums.isEmpty
+                          ? Colors.grey
+                          : todakText,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
 
           // 인디케이터
           Padding(
@@ -237,10 +315,11 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
     });
 
     final total = widget.assets.length;
+    final assetsToUpload = widget.assets.reversed.toList();
 
     try {
-      for (int i = total - 1; i >= 0; i--) {
-        final asset = widget.assets[i];
+      for (int i = 0; i < total; i++) {
+        final asset = assetsToUpload[i];
 
         await AlbumUploadService.uploadSingleAsset(
           asset: asset,
@@ -283,4 +362,93 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
       });
     }
   }
+
+  Future<void> _showAlbumSelectSheet(
+      BuildContext context,
+      List<AlbumWithMyInfoModel> albums,
+      AlbumWithMyInfoModel? current,
+      ) async {
+    if (albums.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('업로드할 수 있는 앨범이 없어요.')),
+      );
+      return;
+    }
+
+    final selected = await showModalBottomSheet<AlbumWithMyInfoModel>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                '업로드할 앨범 선택',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: albums.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final album = albums[index];
+                    final isCurrent = current?.id == album.id;
+                    return ListTile(
+                      leading: Icon(
+                        isCurrent
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_unchecked_rounded,
+                        color: isCurrent
+                            ? const Color(0xFF4CAF81)
+                            : Colors.grey,
+                      ),
+                      title: Text(
+                        album.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: album.myLabel != null
+                          ? Text(
+                        album.myLabel!,
+                        style: const TextStyle(fontSize: 12),
+                      )
+                          : null,
+                      onTap: () {
+                        Navigator.of(context).pop(album);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected != null && mounted) {
+      await context.read<AlbumProvider>().selectAlbum(selected);
+      setState(() {}); // 선택된 앨범 이름 갱신
+    }
+  }
+
 }

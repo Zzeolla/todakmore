@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-class FeedItem extends Equatable {
+class MediaItem extends Equatable {
   final String id;           // album_medias.id
   final String albumId;
   final String albumName;
@@ -13,7 +13,7 @@ class FeedItem extends Equatable {
   final double? duration;    // video일 때 초단위
   final DateTime createdAt;
 
-  const FeedItem({
+  const MediaItem({
     required this.id,
     required this.albumId,
     required this.albumName,

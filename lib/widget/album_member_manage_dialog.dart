@@ -347,6 +347,7 @@ class _AlbumMemberManageDialogState extends State<AlbumMemberManageDialog> {
   }
 
   Future<void> _onKickMember(AlbumMemberUiModel member) async {
+    // TODO: 내보내기 후 토닥리스트도 전부 is_deleted = true 처리 필요
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) {

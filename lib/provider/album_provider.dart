@@ -20,6 +20,20 @@ class AlbumProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get selectedAlbumId => _selectedAlbum?.id;
   String? get selectedAlbumName => _selectedAlbum?.name;
+  List<AlbumWithMyInfoModel> get manageAlbums => _albums.where(_isManageRole).toList(growable: false);
+
+  bool _isManageRole(AlbumWithMyInfoModel album) {
+    return album.myRole == 'owner' || album.myRole == 'manager';
+  }
+  // 🔥 albumId로 내가 owner/manager 인지 바로 판단
+  bool canManageAlbumId(String albumId) {
+    try {
+      final album = _albums.firstWhere((a) => a.id == albumId);
+      return _isManageRole(album);
+    } catch (_) {
+      return false;
+    }
+  }
 
   // ───────── 내부 상태 업데이트 헬퍼 ─────────
   void _setLoading(bool value) {
@@ -352,6 +366,21 @@ class AlbumProvider extends ChangeNotifier {
       }
       _setError(e.toString());
     }
+  }
+
+  Future<AlbumWithMyInfoModel?> ensureUploadableAlbumSelected() async {
+    if (_albums.isEmpty) return null;
+
+    final manageAlbums = this.manageAlbums;
+    if (manageAlbums.isEmpty) return null;
+
+    if (_selectedAlbum != null && _isManageRole(_selectedAlbum!)) {
+      return _selectedAlbum;
+    }
+
+    _selectedAlbum = manageAlbums.first;
+    notifyListeners();
+    return _selectedAlbum;
   }
 
   // ───────── 6) 강제 새로고침 ─────────

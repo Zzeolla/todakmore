@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todakmore/provider/album_provider.dart';
+import 'package:todakmore/provider/todak_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/service/fcm_token_service.dart';
 
@@ -52,7 +53,9 @@ class _SplashScreenState extends State<SplashScreen> {
     final userProvider = context.read<UserProvider>();
     await userProvider.loadOrCreateUser();
 
-    await _setupFcm(userProvider.userId!);
+    final userId = userProvider.userId!;
+
+    await _setupFcm(userId);
 
     if (!mounted) return;
 
@@ -61,6 +64,9 @@ class _SplashScreenState extends State<SplashScreen> {
     await albumProvider.loadAlbums(preferredAlbumId: userProvider.lastAlbumId);
 
     if (!mounted) return;
+
+    final todakProvider = context.read<TodakProvider>();
+    await todakProvider.loadMyTodakRecords(userId: userId);
 
     // 4) 앨범 존재 여부에 따라 분기
     if (albumProvider.albums.isNotEmpty) {

@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:todakmore/util/video_policy.dart';
+import 'package:todakmore/util/video_upload_helper.dart';
 
 class UploadSelectScreen extends StatefulWidget {
   const UploadSelectScreen({super.key});
@@ -85,7 +87,7 @@ class _UploadSelectScreenState extends State<UploadSelectScreen> {
 
       // 여기부터는 권한 OK (authorized / limited)
       final paths = await PhotoManager.getAssetPathList(
-        type: RequestType.image, // 🔒 이미지 전용 (동영상 제외)
+        type: RequestType.common, // 🔒 이미지 전용 (동영상 제외)
         onlyAll: true,
         filterOption: FilterOptionGroup(
           orders: [
@@ -167,20 +169,65 @@ class _UploadSelectScreenState extends State<UploadSelectScreen> {
 
   // ───────────────── 선택 토글 ─────────────────
   void _toggleSelection(AssetEntity asset) {
-    setState(() {
-      if (_selectedAssets.contains(asset)) {
+    final isSelected = _selectedAssets.contains(asset);
+
+    if (isSelected) {
+      setState(() {
         _selectedAssets.remove(asset);
-      } else {
-        if (_selectedAssets.length >= _maxSelection) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('사진은 최대 $_maxSelection장까지 선택할 수 있어요.'),
+        _previewAsset = asset; // 미리보기는 바꿔도 되고, 안 바꿔도 됨
+      });
+      return;
+    }
+
+    // 새로 선택하는 경우부터 체크 시작
+    // 1) 선택 개수 제한
+    if (_selectedAssets.length >= _maxSelection) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('사진은 최대 $_maxSelection장까지 선택할 수 있어요.'),
+        ),
+      );
+      return;
+    }
+
+    // 2) 동영상이면 길이 제한 체크
+    if (asset.type == AssetType.video) {
+      // TODO: 나중에 isPro 붙이면 여기서 userProvider.isPro 넘기면 됨
+      // final userProvider = context.read<UserProvider>();
+      // final isPro = userProvider.isPro;
+      // final maxSeconds = TodakVideoPolicy.maxSeconds(isPro: isPro);
+
+      final maxSeconds = VideoPolicy.maxSeconds(isPro: false); // MVP: 무조건 free 기준
+
+      final canUpload = VideoUploadHelper.canUploadVideo(
+        entity: asset,
+        maxSeconds: maxSeconds,
+      );
+
+      if (!canUpload) {
+        final duration = asset.duration;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '동영상은 최대 ${maxSeconds}초까지만 선택할 수 있어요.\n'
+                  '현재 영상 길이: ${duration}초',
             ),
-          );
-          return;
-        }
-        _selectedAssets.add(asset);
+          ),
+        );
+
+        // 미리보기는 바꿔줄지 말지는 취향인데, 일단 바꿔줘도 괜찮음
+        setState(() {
+          _previewAsset = asset;
+        });
+
+        return; // ✅ 선택 안 됨
       }
+    }
+
+    // 3) 여기까지 통과했으면 정상적으로 선택
+    setState(() {
+      _selectedAssets.add(asset);
       _previewAsset = asset;
     });
   }
@@ -289,40 +336,6 @@ class _UploadSelectScreenState extends State<UploadSelectScreen> {
             const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
               children: [
-                // 앨범 선택 (TODO)
-                GestureDetector(
-                  onTap: () {
-                    // TODO: 업로드 시 앨범 선택하는 기능으로 요건 추후 upload_confirm 스크린으로 이동 필요
-                  },
-                  child: Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(999),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.photo_album_outlined, size: 18),
-                        SizedBox(width: 6),
-                        Text(
-                          '현재 앨범 (TODO)',
-                          style: TextStyle(fontSize: 13),
-                        ),
-                        SizedBox(width: 4),
-                        Icon(Icons.expand_more, size: 18),
-                      ],
-                    ),
-                  ),
-                ),
                 const Spacer(),
                 // 선택 개수 표시
                 Container(

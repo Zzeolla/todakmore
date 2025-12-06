@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:todakmore/model/feed_item.dart';
+import 'package:todakmore/model/media_item.dart';
 
 class FeedProvider extends ChangeNotifier {
   final SupabaseClient _client = Supabase.instance.client;
 
-  final List<FeedItem> _items = [];
-  List<FeedItem> get items => List.unmodifiable(_items);
+  final List<MediaItem> _items = [];
+  List<MediaItem> get items => List.unmodifiable(_items);
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -62,7 +62,7 @@ class FeedProvider extends ChangeNotifier {
               cover_url
             )
           ''')
-          .eq('media_type', 'photo')                 // 일단 사진만
+          // .eq('media_type', 'photo')                 // 일단 사진만
           .order('created_at', ascending: false)
           .range(from, to);
 
@@ -76,7 +76,7 @@ class FeedProvider extends ChangeNotifier {
       }
 
       final now = DateTime.now();
-      final List<FeedItem> newItems = [];
+      final List<MediaItem> newItems = [];
 
       for (final row in data) {
         // 소프트 삭제된 건 무시
@@ -98,7 +98,7 @@ class FeedProvider extends ChangeNotifier {
         final createdAt = DateTime.parse(row['created_at'] as String).toLocal();
 
         newItems.add(
-          FeedItem(
+          MediaItem(
             id: row['id'] as String,
             albumId: album['id'] as String,
             albumName: album['name'] as String? ?? '이름 없는 앨범',

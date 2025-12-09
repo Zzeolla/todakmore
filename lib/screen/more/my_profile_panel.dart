@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
+import 'package:todakmore/widget/name_edit_bottom_sheet.dart';
 
 class MyProfilePanel extends StatelessWidget {
   const MyProfilePanel({super.key});
@@ -114,225 +115,17 @@ class MyProfilePanel extends StatelessWidget {
     return name.characters.first;
   }
 
-  void _openEditNameSheet(BuildContext context, String? currentName) {
-    showModalBottomSheet(
+  void _openEditNameSheet(BuildContext context, String? currentName) async {
+    final newName = await showNameEditBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-          ),
-          child: const _EditNameSheet(),
-        );
-      },
+      title: '이름을 입력해 주세요',
+      hintText: '예: 홍길동',
+      initialText: currentName,
     );
-  }
-}
 
-class _EditNameSheet extends StatefulWidget {
-  final String? initialName;
+    if (newName == null) return;
 
-  const _EditNameSheet({super.key, this.initialName});
-
-  @override
-  State<_EditNameSheet> createState() => _EditNameSheetState();
-}
-
-class _EditNameSheetState extends State<_EditNameSheet> {
-  late final TextEditingController _nameController;
-  bool _isSavingName = false;
-  String? _errorText;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.initialName ?? '');
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveName() async {
-    final name = _nameController.text.trim();
-
-    if (name.isEmpty) {
-      setState(() {
-        _errorText = '이름을 입력해 주세요.';
-      });
-      return;
-    }
-
-    setState(() {
-      _isSavingName = true;
-      _errorText = null;
-    });
-
-    try {
-      final userProvider = context.read<UserProvider>();
-      await userProvider.updateDisplayName(name);
-
-      if (!mounted) return;
-      Navigator.of(context).pop(); // 바텀시트 닫기
-    } catch (e) {
-      setState(() {
-        _errorText = '이름 저장 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSavingName = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasName = (widget.initialName?.isNotEmpty ?? false);
-
-    return SafeArea(
-      top: false,
-      child: Container(
-        margin: const EdgeInsets.only(top: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE9FCEF), // Mint Breeze
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 8,
-              offset: const Offset(0, -4),
-              color: Colors.black.withOpacity(0.05),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 제목 + 아이콘
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text('👋', style: TextStyle(fontSize: 20)),
-                SizedBox(width: 6),
-                Text(
-                  '이름을 입력해 주세요',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF333333),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _nameController,
-              textAlign: TextAlign.center,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _saveName(),
-              decoration: InputDecoration(
-                hintText: '예: 홍길동',
-                hintStyle: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFFB0B0B0),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            if (_errorText != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                _errorText!,
-                style: const TextStyle(fontSize: 11, color: Colors.red),
-              ),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                if (hasName)
-                  SizedBox(
-                    height: 44,
-                    child: OutlinedButton(
-                      onPressed: _isSavingName
-                          ? null
-                          : () {
-                        Navigator.of(context).pop();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF2F2F2),
-                        foregroundColor: const Color(0xFF4A4A4A),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        side: BorderSide.none,
-                      ),
-                      child: const Text(
-                        '취소',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                const Spacer(),
-                SizedBox(
-                  height: 44,
-                  child: ElevatedButton(
-                    onPressed: _isSavingName ? null : _saveName,
-                    style: ElevatedButton.styleFrom(
-                      elevation: 0,
-                      backgroundColor: const Color(0xFF4CAF81),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isSavingName
-                        ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.white,
-                        ),
-                      ),
-                    )
-                        : const Text(
-                      '확인',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+    final userProvider = context.read<UserProvider>();
+    await userProvider.updateDisplayName(newName);
   }
 }

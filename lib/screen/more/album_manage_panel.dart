@@ -7,6 +7,7 @@ import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/widget/album_create_sheet.dart';
 import 'package:todakmore/widget/album_invite_join_sheet.dart';
 import 'package:todakmore/widget/album_member_manage_dialog.dart';
+import 'package:todakmore/widget/name_edit_bottom_sheet.dart';
 
 class AlbumManagePanel extends StatefulWidget {
   const AlbumManagePanel({super.key});
@@ -50,10 +51,8 @@ class _AlbumManagePanelState extends State<AlbumManagePanel> {
                 textAlign: TextAlign.center,
               ),
             )
-                : ListView.separated(
+                : ListView.builder(
               itemCount: albums.length,
-              separatorBuilder: (_, __) =>
-              const Divider(height: 1, thickness: 0.5),
               itemBuilder: (context, index) {
                 final album = albums[index];
 
@@ -163,6 +162,8 @@ class _AlbumManagePanelState extends State<AlbumManagePanel> {
                     onTap: () {
                       if (canManage) {
                         _onAlbumManageTap(album);
+                      } else {
+                        _onViewerAlbumTap(album);
                       }
                     },
                   ),
@@ -316,6 +317,32 @@ class _AlbumManagePanelState extends State<AlbumManagePanel> {
         return AlbumMemberManageDialog(album: album);
       },
     );
+  }
+
+  Future<void> _onViewerAlbumTap(AlbumWithMyInfoModel album) async {
+    final albumProvider = context.read<AlbumProvider>();
+
+    // 1) 바텀시트로 새 라벨 입력 받기
+    final newLabel = await showNameEditBottomSheet(
+      context: context,
+      title: '앨범에서 사용할 이름',
+      hintText: '예: 엄마, 아빠, 할머니',
+      initialText: album.myLabel ?? '',
+    );
+
+    if (newLabel == null) return; // 취소 or 뒤로가기
+
+    final userId = context.read<UserProvider>().userId;
+
+    await albumProvider.updateMemberLabel(
+      albumId: album.id,
+      memberId: userId!,
+      newLabel: newLabel,
+    );
+
+    // AlbumProvider.updateMemberLabel 안에서
+    // _albums + _selectedAlbum 업데이트하고 notifyListeners()
+    // 하도록 이미 만들어 두었으니 여기서 따로 setState 할 필요 없음.
   }
 
 

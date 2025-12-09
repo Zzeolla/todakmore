@@ -19,6 +19,7 @@ class UserProvider extends ChangeNotifier {
   String? get lastAlbumId => _currentUser?.lastAlbumId;
   bool get hasAnyOwnerOrManager => _hasAnyOwnerOrManager;
   int get todakLimit => _todakLimit;
+  bool get notificationsEnabled => _currentUser?.notificationsEnabled ?? true;
 
   /// 로그인된 유저 기준으로 users row 불러오거나 생성
   Future<void> loadOrCreateUser() async {
@@ -150,6 +151,19 @@ class UserProvider extends ChangeNotifier {
       _hasAnyOwnerOrManager = false;
       notifyListeners();
     }
+  }
+
+  Future<void> setNotificationsEnabled(bool value) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) return;
+
+    await Supabase.instance.client
+        .from('users')
+        .update({'notifications_enabled': value})
+        .eq('id', authUser.id);
+
+    _currentUser = _currentUser!.copyWith(notificationsEnabled: value);
+    notifyListeners();
   }
 
   /// 로그아웃 시 초기화 (옵션)

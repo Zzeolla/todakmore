@@ -68,64 +68,57 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF9F4), // Cream White
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 2.0, // ★ 자간 추가
+    return WillPopScope(
+      onWillPop: () async {
+        if (_selectedIndex != 0) {
+          setState(() {
+            _selectedIndex = 0;
+          });
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFFF9F4), // Cream White
+        body: _screens[_selectedIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          selectedLabelStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 2.0, // ★ 자간 추가
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 1.5, // ★ 자간 추가
+          ),
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          selectedItemColor: const Color(0xFF4CAF81),
+          unselectedItemColor: const Color(0xFF9A9A9A), // Warm Gray
+          backgroundColor: const Color(0xFFF3FDF6),
+          elevation: 8,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Text('🏠', style: TextStyle(fontSize: 22)),
+                activeIcon: Text('🏠', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                label: '일상',
+              ),
+              BottomNavigationBarItem(
+                icon: Text('👋', style: TextStyle(fontSize: 22)),
+                activeIcon: Text('👋', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                label: '토닥',
+              ),
+              BottomNavigationBarItem(
+                icon: Text('⋯', style: TextStyle(fontSize: 22)),
+                activeIcon: Text('⋯', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                label: '더보기',
+              ),
+            ],
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 1.5, // ★ 자간 추가
-        ),
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        selectedItemColor: const Color(0xFF4CAF81),
-        unselectedItemColor: const Color(0xFF9A9A9A), // Warm Gray
-        backgroundColor: const Color(0xFFF3FDF6),
-        elevation: 8,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Text(
-                '🏠',
-                style: TextStyle(fontSize: 22),
-              ),
-              activeIcon: Text(
-                '🏠',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              label: '일상',
-            ),
-            BottomNavigationBarItem(
-              icon: Text(
-                '👋',
-                style: TextStyle(fontSize: 22),
-              ),
-              activeIcon: Text(
-                '👋',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              label: '토닥',
-            ),
-            BottomNavigationBarItem(
-              icon: Text(
-                '⋯',
-                style: TextStyle(fontSize: 22),
-              ),
-              activeIcon: Text(
-                '⋯',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              label: '더보기',
-            ),
-          ],
       ),
     );
   }

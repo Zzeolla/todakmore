@@ -7,7 +7,7 @@ import 'package:todakmore/model/album_with_my_info_model.dart';
 import 'package:todakmore/provider/feed_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/provider/album_provider.dart';
-import 'package:todakmore/service/album_upload_service.dart';
+import 'package:todakmore/service/media_upload_service.dart';
 import 'package:todakmore/service/notification_service.dart';
 
 class UploadConfirmScreen extends StatefulWidget {

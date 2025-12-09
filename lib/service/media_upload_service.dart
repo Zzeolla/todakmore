@@ -1,4 +1,4 @@
-// lib/service/album_upload_service.dart
+// lib/service/media_upload_service.dart
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -67,7 +67,7 @@ class AlbumUploadService {
         uploadedBy: uploadedBy,
         id: id,
       );
-    };
+    }
   }
 
   // ───────────────── 사진 업로드 (기존 로직) ─────────────────

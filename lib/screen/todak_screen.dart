@@ -7,7 +7,6 @@ import 'package:todakmore/provider/todak_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/screen/media_full_screen.dart';
 import 'package:todakmore/widget/common_app_bar.dart';
-import 'package:todakmore/widget/feed_card.dart';
 import 'package:http/http.dart' as http;
 
 class TodakScreen extends StatefulWidget {

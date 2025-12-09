@@ -4,6 +4,7 @@ import 'package:todakmore/model/album_with_my_info_model.dart';
 import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/widget/album_invite_share_sheet.dart';
+import 'package:todakmore/widget/name_edit_bottom_sheet.dart';
 // TODO: 나중에 디자인 다시 바꾸자 너무 별로다
 class AlbumMemberManageDialog extends StatefulWidget {
   final AlbumWithMyInfoModel album;
@@ -23,9 +24,12 @@ class _AlbumMemberManageDialogState extends State<AlbumMemberManageDialog> {
   bool _isUpdating = false; // 서버 업데이트 중 로딩 표시용
   List<AlbumMemberUiModel> _members = [];
 
+  late String _albumName;
+
   @override
   void initState() {
     super.initState();
+    _albumName = widget.album.name;
     _loadMembers();
   }
 
@@ -106,11 +110,41 @@ class _AlbumMemberManageDialogState extends State<AlbumMemberManageDialog> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              Text(
-                widget.album.name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+              // ───────── 앨범 제목 + 수정 버튼 ─────────
+              SizedBox(
+                height: 32, // 높이는 상황에 맞춰 조절
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // 가운데 정렬된 앨범명
+                    Center(
+                      child: Text(
+                        _albumName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+
+                    // 오른쪽 상단에 붙는 수정 버튼 (owner만)
+                    if (_amIOwner)
+                      Positioned(
+                        right: 0,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(
+                            Icons.edit_rounded,
+                            size: 18,
+                            color: Color(0xFF4CAF81),
+                          ),
+                          onPressed: _onEditAlbumName,
+                        ),
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
@@ -240,6 +274,7 @@ class _AlbumMemberManageDialogState extends State<AlbumMemberManageDialog> {
     final isOwner = member.role == 'owner';
     final isManager = member.role == 'manager';
     final isViewer = member.role == 'viewer';
+    final isMe  = member.isMe;
 
     // 체크박스 활성 여부: owner만 매니저 권한 변경 가능, owner 행은 체크박스 없음
     final canToggleManager = _amIOwner && !isOwner;
@@ -278,15 +313,23 @@ class _AlbumMemberManageDialogState extends State<AlbumMemberManageDialog> {
           color: Colors.grey[700],
         ),
       ),
-      trailing: canKick
+      trailing: isMe
           ? IconButton(
-        icon: const Icon(
-          Icons.person_remove_rounded,
-          color: Colors.redAccent,
-        ),
-        onPressed: () => _onKickMember(member),
-      )
-          : null,
+              icon: const Icon(
+                Icons.edit_rounded,
+                color: Color(0xFF4CAF81),
+              ),
+              onPressed: () => _onEditMemberLabel(member),
+            )
+          : (canKick
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.person_remove_rounded,
+                    color: Colors.redAccent,
+                  ),
+                  onPressed: () => _onKickMember(member),
+                )
+              : null),
     );
   }
 
@@ -427,6 +470,87 @@ class _AlbumMemberManageDialogState extends State<AlbumMemberManageDialog> {
         return 2;
     }
   }
+
+  Future<void> _onEditMemberLabel(AlbumMemberUiModel member) async {
+    final newLabel = await showNameEditBottomSheet(
+      context: context,
+      title: '앨범에서 사용할 이름',
+      hintText: '예: 엄마, 아빠, 할머니',
+      initialText: member.label.isNotEmpty ? member.label : member.name,
+    );
+
+    if (newLabel == null) return;
+
+    setState(() {
+      _isUpdating = true;
+    });
+
+    try {
+      final albumProvider = context.read<AlbumProvider>();
+
+      await albumProvider.updateMemberLabel(
+        albumId: widget.album.id,
+        memberId: member.id,
+        newLabel: newLabel,
+      );
+
+      setState(() {
+        member.label = newLabel;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+      }
+    }
+  }
+
+  // 🔥 앨범 이름 수정
+  Future<void> _onEditAlbumName() async {
+    final newName = await showNameEditBottomSheet(
+      context: context,
+      title: '앨범 이름 수정',
+      hintText: '예: 이겸이 성장 앨범',
+      initialText: _albumName,
+      confirmText: '저장',
+    );
+
+    if (newName == null) return;
+    final trimmed = newName.trim();
+    if (trimmed.isEmpty) return;
+
+    setState(() {
+      _isUpdating = true;
+    });
+
+    try {
+      final albumProvider = context.read<AlbumProvider>();
+
+      // 🔻 실제 AlbumProvider에 맞게 메서드 이름/파라미터는 맞춰줘
+      await albumProvider.updateAlbumName(
+        albumId: widget.album.id,
+        newName: trimmed,
+      );
+
+      setState(() {
+        _albumName = trimmed;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('앨범 이름 수정 중 오류가 발생했습니다.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+      }
+    }
+  }
+
 }
 
 // ─────────────────────────────────

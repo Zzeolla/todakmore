@@ -324,6 +324,80 @@ class AlbumProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateMemberLabel({
+    required String albumId,
+    required String memberId, // album_members.id
+    required String newLabel,
+  }) async {
+    try {
+      await _client
+          .from('album_members')
+          .update({'label': newLabel})
+          .eq('id', memberId)
+          .eq('album_id', albumId);
+
+      // 2) Provider 내부 상태도 반영 (내 라벨이라는 전제)
+      final index = _albums.indexWhere((a) => a.id == albumId);
+      if (index != -1) {
+        final old = _albums[index];
+        _albums[index] = old.copyWith(myLabel: newLabel);
+
+        if (_selectedAlbum?.id == albumId) {
+          _selectedAlbum = _albums[index];
+        }
+
+        notifyListeners();
+      }
+    } catch (e, st) {
+      if (kDebugMode) {
+        print('updateMemberLabel error: $e\n$st');
+      }
+      _setError(e.toString());
+      rethrow;
+    }
+  }
+
+  // ───────── 4-1) 앨범 이름 변경 ─────────
+  Future<void> updateAlbumName({
+    required String albumId,
+    required String newName,
+  }) async {
+    _setError(null);
+
+    try {
+      // 1) albums.name 업데이트
+      final Map<String, dynamic> result = await _client
+          .from('albums')
+          .update({'name': newName})
+          .eq('id', albumId)
+          .select()
+          .single();
+
+      // 2) AlbumModel로 변환
+      final updatedAlbum = AlbumModel.fromMap(result);
+
+      // 3) 내부 _albums 리스트에서 해당 앨범 찾아 교체
+      final index = _albums.indexWhere((a) => a.id == albumId);
+      if (index != -1) {
+        final old = _albums[index];
+        _albums[index] = old.copyWith(album: updatedAlbum);
+      }
+
+      // 4) 선택된 앨범도 동일하게 갱신
+      if (_selectedAlbum?.id == albumId) {
+        _selectedAlbum = _albums[index];
+      }
+
+      notifyListeners();
+    } catch (e, st) {
+      if (kDebugMode) {
+        print('updateAlbumName error: $e\n$st');
+      }
+      _setError(e.toString());
+      rethrow; // 다이얼로그 쪽에서 에러 핸들링할 수 있게
+    }
+  }
+
   Future<void> removeMember({
     required String albumId,
     required String memberId, // album_members.id

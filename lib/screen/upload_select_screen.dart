@@ -564,11 +564,68 @@ class _UploadSelectScreenState extends State<UploadSelectScreen> {
           );
         }
 
-        return Image.memory(
-          snapshot.data!,
-          fit: BoxFit.cover,
+        final isVideo = asset.type == AssetType.video;
+        final durationText =
+        isVideo ? _formatDuration(asset.duration) : null;
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.memory(
+              snapshot.data!,
+              fit: BoxFit.cover,
+            ),
+            if (isVideo)
+              Positioned(
+                right: 4,
+                bottom: 4,
+                child: Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.play_arrow,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        durationText!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );
   }
+
+  String _formatDuration(int seconds) {
+    final total = seconds;
+    final h = total ~/ 3600;
+    final m = (total % 3600) ~/ 60;
+    final s = total % 60;
+
+    if (h > 0) {
+      // 1시간 이상일 때: H:MM:SS
+      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    } else {
+      // 1시간 미만일 때: M:SS
+      return '${m.toString().padLeft(1, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+  }
+
 }

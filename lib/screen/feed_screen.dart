@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/provider/feed_provider.dart';
 import 'package:todakmore/provider/todak_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/screen/media_full_screen.dart';
+import 'package:todakmore/service/media_download_service.dart';
 import 'package:todakmore/widget/common_app_bar.dart';
 import 'package:todakmore/widget/feed_card.dart';
 import 'package:todakmore/model/media_item.dart';
-import 'package:http/http.dart' as http;
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -156,7 +155,7 @@ class _FeedScreenState extends State<FeedScreen> {
     Navigator.pushNamed(context, '/upload-select');
   }
 
-  // ───────────────── 다운로드 처리 ─────────────────
+// ───────────────── 다운로드 처리 ─────────────────
   Future<void> _handleDownload(MediaItem item) async {
     if (_downloadingId == item.id) return;
 
@@ -165,61 +164,31 @@ class _FeedScreenState extends State<FeedScreen> {
     });
 
     try {
-      // 1) 권한 요청
-      final permission = await PhotoManager.requestPermissionExtend();
-      if (!permission.isAuth) {
-        if (mounted) {
+      final result = await MediaDownloadService.downloadMedia(item);
+
+      if (!mounted) return;
+
+      switch (result) {
+        case MediaDownloadResult.permissionDenied:
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('갤러리 접근 권한을 허용해 주세요.')),
           );
-        }
-        return;
-      }
-
-      // 2) Supabase Storage URL에서 바이트 다운로드
-      final uri = Uri.parse(item.url); // 원본 URL 사용
-      final response = await http.get(uri);
-
-      if (response.statusCode != 200) {
-        throw Exception('다운로드 실패: ${response.statusCode}');
-      }
-
-      final bytes = response.bodyBytes;
-
-      // 3) 타입에 따라 저장
-      if (item.isVideo) {
-
-        // 👉 영상 저장 (원하면 나중에 구현)
-        // final tempDir = await getTemporaryDirectory();
-        // final filePath = p.join(tempDir.path, '${item.id}.mp4');
-        // final file = File(filePath);
-        // await file.writeAsBytes(bytes);
-        // await PhotoManager.editor.saveVideo(file);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('영상 저장은 나중에 지원할 예정이에요.')),
-          );
-        }
-      } else {
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final filename = 'todak_${item.albumName}_$timestamp.jpg';
-
-        await PhotoManager.editor.saveImage(
-          bytes,
-          filename: filename,
-        );
-
-        if (mounted) {
+          break;
+        case MediaDownloadResult.savedImage:
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('갤러리에 저장됐어요. 😊')),
           );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('다운로드 중 오류가 발생했어요: $e')),
-        );
+          break;
+        case MediaDownloadResult.savedVideo:
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('영상이 갤러리에 저장됐어요. 🎬')),
+          );
+          break;
+        case MediaDownloadResult.failed:
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('다운로드 중 오류가 발생했어요.')),
+          );
+          break;
       }
     } finally {
       if (mounted) {
@@ -236,8 +205,8 @@ class _FeedScreenState extends State<FeedScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('사진 삭제'),
-          content: const Text('정말 이 사진을 삭제하시겠어요?'),
+          title: const Text('사진/영상 삭제'),
+          content: const Text('정말 이 사진/영상을 삭제하시겠어요?'),
           actions: [
             TextButton(
               onPressed: () {

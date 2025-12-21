@@ -274,7 +274,7 @@ class _AlbumInviteJoinSheetState extends State<AlbumInviteJoinSheet> {
 
                     // --- 라벨 입력 ---
                     const Text(
-                      '라벨',
+                      '앨범에서 사용할 이름',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,

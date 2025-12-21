@@ -222,6 +222,24 @@ class AlbumUploadService {
     return insertRes;
   }
 
+  static Future<void> insertMediaTags({
+    required String mediaId,
+    required List<String> tags,
+  }) async {
+    if (tags.isEmpty) return;
+
+    // 최대 3개만 (앱에서도 한번 더 가드)
+    final safe = tags.take(3).toList();
+
+    await _supabase.from('album_media_tags').insert(
+      safe.map((t) => {
+        'media_id': mediaId,
+        'tag': t,
+      }).toList(),
+    );
+  }
+
+
   static String _guessContentType(String ext) {
     switch (ext) {
       case '.png':

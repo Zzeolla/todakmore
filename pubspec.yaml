@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 1.0.0+5
+version: 1.0.0+6
 
 environment:
   sdk: ^3.7.2
@@ -32,6 +32,7 @@ dependencies:
   media_kit_video: ^2.0.1
   media_kit_libs_android_video: ^1.3.8
   media_kit_libs_ios_video: ^1.1.4
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +68,8 @@ flutter:
     - assets/img/kakao_bubble.png
     - assets/img/todak_on.png
     - assets/img/todak_off.png
+    - assets/img/google_drive_img.png
+    - assets/img/onedrive_img.png
     - assets/icon/splash_icon.png
 
   fonts:

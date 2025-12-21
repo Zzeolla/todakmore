@@ -36,9 +36,6 @@ class _SplashScreenState extends State<SplashScreen> {
   // 2) 로그인 여부에 따라 다음 화면으로 이동
   // ─────────────────────────────────
   Future<void> _checkAuthAndNavigate() async {
-    // 살짝 로고가 보이도록 500ms 정도 딜레이 (선택사항)
-    await Future.delayed(const Duration(milliseconds: 500));
-
     final session = _supabase.auth.currentSession;
 
     if (!mounted) return;

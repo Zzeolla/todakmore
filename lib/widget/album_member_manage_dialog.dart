@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:todakmore/model/album_with_my_info_model.dart';
 import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/provider/user_provider.dart';
+import 'package:todakmore/screen/album_edit_screen.dart';
 import 'package:todakmore/widget/album_invite_share_sheet.dart';
 import 'package:todakmore/widget/name_edit_bottom_sheet.dart';
 // TODO: 나중에 디자인 다시 바꾸자 너무 별로다
@@ -82,6 +83,7 @@ class _AlbumMemberManageDialogState extends State<AlbumMemberManageDialog> {
 
   bool get _amIOwner => widget.album.myRole == 'owner';
   bool get _amIManager => widget.album.myRole == 'manager';
+  bool get _canEditAlbum => widget.album.myRole == 'owner' || widget.album.myRole == 'manager';
 
   @override
   Widget build(BuildContext context) {
@@ -130,18 +132,14 @@ class _AlbumMemberManageDialogState extends State<AlbumMemberManageDialog> {
                     ),
 
                     // 오른쪽 상단에 붙는 수정 버튼 (owner만)
-                    if (_amIOwner)
+                    if (_canEditAlbum)
                       Positioned(
                         right: 0,
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          icon: const Icon(
-                            Icons.edit_rounded,
-                            size: 18,
-                            color: Color(0xFF4CAF81),
-                          ),
-                          onPressed: _onEditAlbumName,
+                          icon: const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF4CAF81)),
+                          onPressed: _openAlbumEditScreen,
                         ),
                       ),
                   ],
@@ -506,50 +504,26 @@ class _AlbumMemberManageDialogState extends State<AlbumMemberManageDialog> {
     }
   }
 
-  // 🔥 앨범 이름 수정
-  Future<void> _onEditAlbumName() async {
-    final newName = await showNameEditBottomSheet(
-      context: context,
-      title: '앨범 이름 수정',
-      hintText: '예: 이겸이 성장 앨범',
-      initialText: _albumName,
-      confirmText: '저장',
+  Future<void> _openAlbumEditScreen() async {
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AlbumEditScreen(album: widget.album),
+      ),
     );
 
-    if (newName == null) return;
-    final trimmed = newName.trim();
-    if (trimmed.isEmpty) return;
-
-    setState(() {
-      _isUpdating = true;
-    });
-
-    try {
+    // changed == true 면 다이얼로그 타이틀도 즉시 반영되게 새로고침
+    if (changed == true) {
       final albumProvider = context.read<AlbumProvider>();
+      final updated = albumProvider.albums.firstWhere((a) => a.id == widget.album.id);
 
-      // 🔻 실제 AlbumProvider에 맞게 메서드 이름/파라미터는 맞춰줘
-      await albumProvider.updateAlbumName(
-        albumId: widget.album.id,
-        newName: trimmed,
-      );
-
+      if (!mounted) return;
       setState(() {
-        _albumName = trimmed;
+        _albumName = updated.name;
       });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('앨범 이름 수정 중 오류가 발생했습니다.')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUpdating = false;
-        });
-      }
     }
   }
+
 
 }
 

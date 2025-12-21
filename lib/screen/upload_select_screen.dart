@@ -31,7 +31,7 @@ class _UploadSelectScreenState extends State<UploadSelectScreen> {
 
   final ScrollController _scrollController = ScrollController();
 
-  static const int _maxSelection = 5;
+  static const int _maxSelection = 10;
 
   @override
   void initState() {

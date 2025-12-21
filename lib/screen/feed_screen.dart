@@ -7,6 +7,7 @@ import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/screen/media_full_screen.dart';
 import 'package:todakmore/service/media_download_service.dart';
 import 'package:todakmore/widget/common_app_bar.dart';
+import 'package:todakmore/widget/common_hashtag_input.dart';
 import 'package:todakmore/widget/feed_card.dart';
 import 'package:todakmore/model/media_item.dart';
 
@@ -117,13 +118,14 @@ class _FeedScreenState extends State<FeedScreen> {
                 }
 
                 final MediaItem item = items[index];
-                final canDeleteThisItem = context.read<AlbumProvider>().canManageAlbumId(item.albumId);
+                final canManageThisItem = context.read<AlbumProvider>().canManageAlbumId(item.albumId);
 
                 return _FeedCardWithTodak(
                   item: item,
                   isDownloading: _downloadingId == item.id,
                   onDownload: () => _handleDownload(item),
-                  onDelete: canDeleteThisItem ? () => _handleDelete(item) : null,
+                  onDelete: canManageThisItem ? () => _handleDelete(item) : null,
+                  onEdit: canManageThisItem ? () => _openEditTagsSheet(context, item) : null,
                 );
               },
             ),
@@ -232,6 +234,174 @@ class _FeedScreenState extends State<FeedScreen> {
       await context.read<FeedProvider>().deleteItem(item.id);
     }
   }
+
+  Future<void> _openEditTagsSheet(BuildContext context, MediaItem item) async {
+    final controller = TextEditingController();
+    final focusNode = FocusNode();
+    List<String> editTags = [...item.tags];
+
+    final result = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setModalState) {
+            const bg = Color(0xFFFFF9F4);
+            const lavender = Color(0xFFC6B6FF);
+
+            // ✅ 저장 가능 조건:
+            // - 입력 중인 텍스트가 없어야 함(확정 안 된 태그)
+            // - 9글자 이상이면 입력 중 텍스트가 있으므로 저장 불가
+            final pending = controller.text.trim();
+            final canSave = pending.isEmpty;
+
+            void showMsg(String msg) {
+              ScaffoldMessenger.of(sheetContext).showSnackBar(
+                SnackBar(content: Text(msg)),
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 핸들
+                      Container(
+                        width: 44,
+                        height: 5,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+
+                      // 타이틀 + 닫기
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              '해시태그 수정',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF444444),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(sheetContext),
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // ✅ 여기서 공용 입력 위젯 하나만 사용
+                      CommonHashtagInput(
+                        enabled: true,
+                        controller: controller,
+                        focusNode: focusNode,
+                        tags: editTags,
+                        onChanged: (next) {
+                          setModalState(() => editTags = next);
+                        },
+                        title: '해시태그 (이 사진)',
+                        helperText: '최대 3개 · 태그당 8글자',
+                        compact: true,
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              onPressed: () => Navigator.pop(sheetContext),
+                              child: const Text(
+                                '취소',
+                                style: TextStyle(fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: lavender,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              onPressed: () {
+                                // ✅ “왜 저장 안되는지” 안내
+                                if (!canSave) {
+                                  showMsg('입력 중인 해시태그를 엔터(완료)로 확정한 뒤 저장해 주세요.');
+                                  focusNode.requestFocus();
+                                  return;
+                                }
+                                Navigator.pop(sheetContext, editTags);
+                              },
+                              child: const Text(
+                                '저장',
+                                style: TextStyle(fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    controller.dispose();
+    focusNode.dispose();
+
+    if (result == null) return;
+
+    try {
+      await context.read<FeedProvider>().updateTags(mediaId: item.id, tags: result);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('해시태그를 저장했어요.')),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('저장에 실패했어요. 권한/RLS를 확인해 주세요.')),
+      );
+    }
+  }
+
 }
 
 class _FeedCardWithTodak extends StatelessWidget {
@@ -239,6 +409,7 @@ class _FeedCardWithTodak extends StatelessWidget {
   final bool isDownloading;
   final VoidCallback? onDownload;
   final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
 
   const _FeedCardWithTodak({
     super.key,
@@ -246,6 +417,7 @@ class _FeedCardWithTodak extends StatelessWidget {
     required this.isDownloading,
     this.onDownload,
     this.onDelete,
+    this.onEdit,
   });
 
   @override
@@ -279,6 +451,7 @@ class _FeedCardWithTodak extends StatelessWidget {
       },
       onDownload: onDownload,
       onDelete: onDelete,
+      onEdit: onEdit,
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(

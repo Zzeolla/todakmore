@@ -56,6 +56,7 @@ class FeedProvider extends ChangeNotifier {
             created_at,
             expire_at,
             is_deleted,
+            album_media_tags ( tag ),
             albums (
               id,
               name,
@@ -97,6 +98,12 @@ class FeedProvider extends ChangeNotifier {
 
         final createdAt = DateTime.parse(row['created_at'] as String).toLocal();
 
+        final tagRows = (row['album_media_tags'] as List?) ?? const [];
+        final tags = tagRows
+            .map((e) => (e as Map)['tag']?.toString() ?? '')
+            .where((s) => s.isNotEmpty)
+            .toList();
+
         newItems.add(
           MediaItem(
             id: row['id'] as String,
@@ -110,6 +117,7 @@ class FeedProvider extends ChangeNotifier {
             height: row['height'] as int?,
             duration: (row['duration'] as num?)?.toDouble(),
             createdAt: createdAt,
+            tags: tags,
           ),
         );
       }
@@ -132,6 +140,64 @@ class FeedProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> updateTags({
+    required String mediaId,
+    required List<String> tags,
+  }) async {
+    try {
+      // 1) 기존 태그 전부 삭제
+      await _client
+          .from('album_media_tags')
+          .delete()
+          .eq('media_id', mediaId); // ⚠️ 컬럼명이 다르면 여기만 바꿔줘 (album_media_id 등)
+
+      // 2) 새 태그 삽입 (비어있으면 삽입 생략 = "태그 없음" 처리)
+      final cleaned = tags
+          .map((t) => t.trim())
+          .where((t) => t.isNotEmpty)
+          .map((t) => t.startsWith('#') ? t.substring(1) : t)
+          .toSet()
+          .toList();
+
+      if (cleaned.isNotEmpty) {
+        final rows = cleaned
+            .map((t) => {
+          'media_id': mediaId, // ⚠️ 여기도 동일
+          'tag': t,
+        })
+            .toList();
+
+        await _client.from('album_media_tags').insert(rows);
+      }
+
+      // 3) 로컬 리스트 갱신 (UI 즉시 반영)
+      final idx = _items.indexWhere((e) => e.id == mediaId);
+      if (idx != -1) {
+        final old = _items[idx];
+        _items[idx] = MediaItem(
+          id: old.id,
+          albumId: old.albumId,
+          albumName: old.albumName,
+          albumCoverUrl: old.albumCoverUrl,
+          mediaType: old.mediaType,
+          url: old.url,
+          thumbUrl: old.thumbUrl,
+          width: old.width,
+          height: old.height,
+          duration: old.duration,
+          createdAt: old.createdAt,
+          tags: cleaned,
+        );
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('updateTags error: $e');
+      rethrow;
+    }
+  }
+
 
   Future<void> deleteItem(String mediaId) async {
     try {

@@ -9,6 +9,8 @@ import 'package:todakmore/provider/user_provider.dart';
 import 'package:todakmore/provider/album_provider.dart';
 import 'package:todakmore/service/media_upload_service.dart';
 import 'package:todakmore/service/notification_service.dart';
+import 'package:todakmore/widget/common_hashtag_input.dart';
+import 'package:todakmore/widget/hashtag_pill.dart';
 
 class UploadConfirmScreen extends StatefulWidget {
   final List<AssetEntity> assets;
@@ -28,6 +30,20 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
   double _progress = 0.0;
   int _uploadedCount = 0;
 
+  // ✅ 공통 해시태그(전체 적용)
+  final List<String> _uploadTags = [];
+
+  // ✅ 입력 컨트롤
+  final TextEditingController _tagCtrl = TextEditingController();
+  final FocusNode _tagFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _tagCtrl.dispose();
+    _tagFocus.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     // 토닥모아 색상
@@ -43,6 +59,7 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
     final total = widget.assets.length;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: todakBackground,
       appBar: AppBar(
         backgroundColor: todakBackground,
@@ -50,202 +67,228 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
         title: const Text('업로드 확인'),
         foregroundColor: todakText,
       ),
-      body: Column(
-        children: [
-          // 상단 큰 미리보기
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: _buildPreview(
-                  asset: widget.assets[_currentIndex],
-                  emptyBackground: todakPeach.withOpacity(0.5),
-                  textColor: todakText,
-                ),
-              ),
-            ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-
-          // 🔹 업로드할 앨범 선택
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-            child: GestureDetector(
-              onTap: manageAlbums.isEmpty
-                  ? null
-                  : () => _showAlbumSelectSheet(
-                context,
-                manageAlbums,
-                selectedAlbum,
-              ),
-              child: Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: manageAlbums.isEmpty
-                        ? Colors.grey.shade300
-                        : todakLavender,
-                    width: 1.5,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 상단 큰 미리보기
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: _buildPreview(
+                      asset: widget.assets[_currentIndex],
+                      emptyBackground: todakPeach.withOpacity(0.5),
+                      textColor: todakText,
+                    ),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                      color: Colors.black.withOpacity(0.04),
-                    ),
-                  ],
                 ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.photo_album_outlined,
-                      size: 20,
-                      color: todakText,
+              ),
+
+              // 🔹 업로드할 앨범 선택
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                child: GestureDetector(
+                  onTap: manageAlbums.isEmpty
+                      ? null
+                      : () => _showAlbumSelectSheet(
+                    context,
+                    manageAlbums,
+                    selectedAlbum,
+                  ),
+                  child: Container(
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: manageAlbums.isEmpty
+                            ? Colors.grey.shade300
+                            : todakLavender,
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                          color: Colors.black.withOpacity(0.04),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        selectedAlbum?.name ??
-                            (manageAlbums.isEmpty
-                                ? '업로드 가능한 앨범이 없어요'
-                                : '업로드할 앨범을 선택해 주세요'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.photo_album_outlined,
+                          size: 20,
+                          color: todakText,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            selectedAlbum?.name ??
+                                (manageAlbums.isEmpty
+                                    ? '업로드 가능한 앨범이 없어요'
+                                    : '업로드할 앨범을 선택해 주세요'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: manageAlbums.isEmpty
+                                  ? Colors.grey
+                                  : todakText,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          manageAlbums.isEmpty
+                              ? Icons.block
+                              : Icons.keyboard_arrow_down_rounded,
                           color: manageAlbums.isEmpty
                               ? Colors.grey
                               : todakText,
-                          fontWeight: FontWeight.w500,
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      manageAlbums.isEmpty
-                          ? Icons.block
-                          : Icons.keyboard_arrow_down_rounded,
-                      color: manageAlbums.isEmpty
-                          ? Colors.grey
-                          : todakText,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // ✅ 공통 해시태그 입력 (전체 적용)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                child: CommonHashtagInput(
+                  enabled: !_isUploading,
+                  controller: _tagCtrl,
+                  focusNode: _tagFocus,
+                  tags: _uploadTags,
+                  onChanged: (next) => setState(() {
+                    _uploadTags
+                      ..clear()
+                      ..addAll(next);
+                  }),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // 인디케이터
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  children: [
+                    Text(
+                      '${_currentIndex + 1} / $total',
+                      style: const TextStyle(fontSize: 13, color: todakText),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '총 $total장 업로드 예정',
+                      style: const TextStyle(fontSize: 13, color: todakText),
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
 
-          const SizedBox(height: 8),
+              const SizedBox(height: 8),
 
-          // 인디케이터
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              children: [
-                Text(
-                  '${_currentIndex + 1} / $total',
-                  style: const TextStyle(fontSize: 13, color: todakText),
-                ),
-                const Spacer(),
-                Text(
-                  '총 $total장 업로드 예정',
-                  style: const TextStyle(fontSize: 13, color: todakText),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // 썸네일 리스트
-          SizedBox(
-            height: 90,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: total,
-              itemBuilder: (context, index) {
-                final asset = widget.assets[index];
-                final isCurrent = index == _currentIndex;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _currentIndex = index);
+              // 썸네일 리스트
+              SizedBox(
+                height: 90,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: total,
+                  itemBuilder: (context, index) {
+                    final asset = widget.assets[index];
+                    final isCurrent = index == _currentIndex;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _currentIndex = index);
+                      },
+                      child: Container(
+                        width: 70,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isCurrent ? todakLavender : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: _buildThumb(asset),
+                        ),
+                      ),
+                    );
                   },
-                  child: Container(
-                    width: 70,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isCurrent ? todakLavender : Colors.transparent,
-                        width: 2,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // 업로드 진행 상태
+              if (_isUploading) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    children: [
+                      LinearProgressIndicator(value: _progress),
+                      const SizedBox(height: 8),
+                      Text(
+                        '업로드 중... $_uploadedCount / $total',
+                        style: const TextStyle(fontSize: 13, color: todakText),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+
+              // 하단 버튼
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _isUploading ? null : () => _startUpload(context),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor:
+                        _isUploading ? Colors.grey.shade300 : const Color(0xFF4CAF81),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        _isUploading ? '업로드 중...' : '업로드 하기',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: _buildThumb(asset),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          const Spacer(),
-
-          // 업로드 진행 상태
-          if (_isUploading) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  LinearProgressIndicator(value: _progress),
-                  const SizedBox(height: 8),
-                  Text(
-                    '업로드 중... $_uploadedCount / $total',
-                    style: const TextStyle(fontSize: 13, color: todakText),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-
-          // 하단 버튼
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _isUploading ? null : () => _startUpload(context),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor:
-                    _isUploading ? Colors.grey.shade300 : const Color(0xFF4CAF81),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    _isUploading ? '업로드 중...' : '업로드 하기',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -321,11 +364,26 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
       for (int i = 0; i < total; i++) {
         final asset = assetsToUpload[i];
 
-        await AlbumUploadService.uploadSingleAsset(
+        final inserted = await AlbumUploadService.uploadSingleAsset(
           asset: asset,
           albumId: albumId,
           uploadedBy: userId,
         );
+
+        final mediaId = inserted['id'] as String;
+
+        // ✅ 공통 태그 저장(업로드 전체 적용)
+        if (_uploadTags.isNotEmpty) {
+          try {
+            await AlbumUploadService.insertMediaTags(
+              mediaId: mediaId,
+              tags: _uploadTags,
+            );
+          } catch (_) {
+            // 업로드는 성공했는데 태그만 실패할 수 있음 → UX상 계속 진행
+            // 원하면 로그 출력/스낵바는 마지막에 한번만 모아서 보여도 됨
+          }
+        }
 
         _uploadedCount = i + 1;
         _progress = _uploadedCount / total;
@@ -450,5 +508,4 @@ class _UploadConfirmScreenState extends State<UploadConfirmScreen> {
       setState(() {}); // 선택된 앨범 이름 갱신
     }
   }
-
 }

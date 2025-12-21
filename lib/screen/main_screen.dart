@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:todakmore/screen/feed_screen.dart';
-import 'package:todakmore/screen/more_screen.dart';
+import 'package:todakmore/screen/more/more_screen.dart';
 import 'package:todakmore/screen/todak_screen.dart';
 import 'package:todakmore/widget/album_invite_share_sheet.dart';
 
@@ -14,14 +14,17 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
+  final GlobalKey<MoreScreenState> _moreKey = GlobalKey<MoreScreenState>();
+
+
   bool _initialized = false;
   String? _initialAlbumId;
 
   // 나중에 각각 별도 파일로 분리해도 됨 (FeedScreen, TodakScreen, MoreScreen)
-  final List<Widget> _screens = [
+  late final List<Widget> _screens = [
     FeedScreen(),
     TodakScreen(),
-    MoreScreen(),
+    MoreScreen(key: _moreKey),
   ];
 
   @override
@@ -70,12 +73,19 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
+        // ✅ 더보기 탭에서 서브 페이지라면: 더보기 메인으로만 이동
+        if (_selectedIndex == 2) {
+          final handled = _moreKey.currentState?.handleBack() ?? false;
+          if (handled) return false; // pop 막기
+        }
+
+        // ✅ 그 외: 탭이 0이 아니면 피드로
         if (_selectedIndex != 0) {
-          setState(() {
-            _selectedIndex = 0;
-          });
+          setState(() => _selectedIndex = 0);
           return false;
         }
+
+        // ✅ 피드 탭이면 앱 종료 허용
         return true;
       },
       child: Scaffold(

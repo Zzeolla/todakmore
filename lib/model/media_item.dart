@@ -12,6 +12,7 @@ class MediaItem extends Equatable {
   final int? height;
   final double? duration;    // video일 때 초단위
   final DateTime createdAt;
+  final List<String> tags;
 
   const MediaItem({
     required this.id,
@@ -25,6 +26,7 @@ class MediaItem extends Equatable {
     required this.height,
     required this.duration,
     required this.createdAt,
+    this.tags = const [],
   });
 
   bool get isVideo => mediaType == 'video';
@@ -56,5 +58,6 @@ class MediaItem extends Equatable {
     height,
     duration,
     createdAt,
+    tags,
   ];
 }

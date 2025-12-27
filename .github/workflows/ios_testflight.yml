@@ -127,6 +127,7 @@ jobs:
           flutter precache --ios
           flutter build ipa \
             --release \
+            --export-options-plist=ios/exportOptions.plist \
             --build-number $GITHUB_RUN_NUMBER
 
       # 10) 생성된 IPA 경로 찾기

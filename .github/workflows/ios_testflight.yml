@@ -50,6 +50,13 @@ jobs:
           p12-file-base64: ${{ secrets.APPSTORE_CERTIFICATES_FILE_BASE64 }}
           p12-password: ${{ secrets.APPSTORE_CERTIFICATES_PASSWORD }}
 
+      - name: Keychains / Identities (debug)
+        run: |
+          security list-keychains
+          security find-identity -p codesigning -v || true
+          echo "----- Apple Distribution only -----"
+          security find-identity -p codesigning -v | grep -E "Apple Distribution|iPhone Distribution" || true
+
       # 7) 프로비저닝 프로파일 자동 다운로드 (App Store용)
       - name: Download provisioning profiles
         uses: apple-actions/download-provisioning-profiles@v1

@@ -69,6 +69,27 @@ jobs:
           flutter precache --ios
           flutter build ios --no-codesign --release
 
+      # ✅ Podfile에 iOS 15.0 강제 (없으면 추가, 있으면 15.0으로 교체)
+      - name: Force iOS deployment target (Podfile = 15.0)
+        run: |
+          if [ -f ios/Podfile ]; then
+            # platform 라인이 있으면 15.0으로 교체
+            if grep -q "^platform :ios" ios/Podfile; then
+              sed -i '' "s/^platform :ios, .*/platform :ios, '15.0'/" ios/Podfile
+            else
+              # 없으면 맨 위에 삽입
+              sed -i '' "1s/^/platform :ios, '15.0'\n\n/" ios/Podfile
+            fi
+          else
+            echo "ios/Podfile not found"
+            exit 1
+          fi
+
+      - name: Build iOS (no codesign)
+        run: |
+          flutter precache --ios
+          flutter build ios --no-codesign --release
+
       # 9) IPA 빌드
       #    - build-number는 매번 증가해야 해서 GITHUB_RUN_NUMBER 사용
       - name: Build IPA

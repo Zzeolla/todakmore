@@ -1,10 +1,10 @@
 name: iOS → TestFlight
 
 on:
-  workflow_dispatch: # 수동 실행
+  workflow_dispatch:
   push:
     tags:
-      - 'ios-v*' # 예: ios-v1.0.0
+      - 'ios-v*'
 
 jobs:
   build-and-upload:
@@ -57,10 +57,6 @@ jobs:
           echo "----- Apple Distribution only -----"
           security find-identity -p codesigning -v | grep -E "Apple Distribution|iPhone Distribution" || true
 
-      - name: Debug - list profiles via App Store Connect API
-        run: |
-          echo "BUNDLE_ID=${{ vars.BUNDLE_ID }}"
-
       # 7) 프로비저닝 프로파일 자동 다운로드 (App Store용)
       - name: Download provisioning profiles
         uses: apple-actions/download-provisioning-profiles@v1
@@ -71,19 +67,21 @@ jobs:
           api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
 
+      # ✅ iOS 프로젝트 없을 때만 생성
       - name: Ensure iOS project files exist
         run: |
-          flutter create . --platforms=ios
-          
+          if [ ! -f ios/Podfile ]; then
+            flutter create . --platforms=ios
+          fi
+
       # ✅ Podfile에 iOS 15.0 강제 (없으면 추가, 있으면 15.0으로 교체)
       - name: Force iOS deployment target (Podfile = 15.0)
         run: |
+          set -e
           if [ -f ios/Podfile ]; then
-            # platform 라인이 있으면 15.0으로 교체
             if grep -q "^platform :ios" ios/Podfile; then
               sed -i '' "s/^platform :ios, .*/platform :ios, '15.0'/" ios/Podfile
             else
-              # 없으면 맨 위에 삽입
               sed -i '' "1s/^/platform :ios, '15.0'\n\n/" ios/Podfile
             fi
           else
@@ -91,43 +89,45 @@ jobs:
             exit 1
           fi
 
+      - name: Force code signing (Release.xcconfig)
+        run: |
+          set -e
+          TEAM_ID="U4J3G589PV"
+          PROFILE_NAME="todakmoreProvisioningProfile"
+
+          mkdir -p ios/Flutter
+          touch ios/Flutter/Release.xcconfig
+
+          sed -i '' '/^DEVELOPMENT_TEAM *=/d' ios/Flutter/Release.xcconfig || true
+          sed -i '' '/^CODE_SIGN_STYLE *=/d' ios/Flutter/Release.xcconfig || true
+          sed -i '' '/^CODE_SIGN_IDENTITY *=/d' ios/Flutter/Release.xcconfig || true
+          sed -i '' '/^PROVISIONING_PROFILE_SPECIFIER *=/d' ios/Flutter/Release.xcconfig || true
+
+          cat >> ios/Flutter/Release.xcconfig <<EOF
+          DEVELOPMENT_TEAM = $TEAM_ID
+          CODE_SIGN_STYLE = Manual
+          CODE_SIGN_IDENTITY = Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER = $PROFILE_NAME
+          EOF
+
+          echo "==== ios/Flutter/Release.xcconfig ===="
+          cat ios/Flutter/Release.xcconfig
+
+      # ✅ Podfile 변경 반영을 위해 pod install 한번 고정
+      - name: Pod install
+        working-directory: ios
+        run: |
+          pod repo update
+          pod install
+
       # 9) IPA 빌드
       #    - build-number는 매번 증가해야 해서 GITHUB_RUN_NUMBER 사용
-      # (1) Flutter 빌드 산출물 준비 (서명 없이)
-      - name: Build iOS (no codesign)
+      - name: Build IPA (App Store)
         run: |
           flutter precache --ios
-          flutter build ios --release --no-codesign
-      
-      # (2) Xcode Archive (여기서 서명 강제)
-      - name: Archive with manual signing
-        env:
-          TEAM_ID: U4J3G589PV
-          PROFILE_NAME: todakmoreProvisioningProfile
-        run: |
-          set -e
-          xcodebuild \
-            -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -archivePath build/Runner.xcarchive \
-            -sdk iphoneos \
-            DEVELOPMENT_TEAM=$TEAM_ID \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-            archive
-      
-      # (3) Export IPA (여기서 exportOptions.plist 사용)
-      - name: Export IPA
-        run: |
-          set -e
-          xcodebuild -exportArchive \
-            -archivePath build/Runner.xcarchive \
-            -exportPath build/ios/ipa \
-            -exportOptionsPlist ios/exportOptions.plist
-
-
+          flutter build ipa \
+            --release \
+            --build-number $GITHUB_RUN_NUMBER
 
       # 10) 생성된 IPA 경로 찾기
       - name: Locate IPA
@@ -150,3 +150,4 @@ jobs:
           issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
           api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+

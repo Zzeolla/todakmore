@@ -19,15 +19,41 @@ import 'package:todakmore/screen/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
+  
+  String? bootError;
+  
+  Future<T> withTimeout<T>(Future<T> f, String label) {
+    return f.timeout(
+      const Duration(seconds: 8),
+      onTimeout: () => throw Exception('BOOT_TIMEOUT: $label'),
+    );
+  }
 
-  await dotenv.load(fileName: ".env");
+  try {
+    await withTimeout(dotenv.load(fileName: ".env"), 'dotenv.load(.env)');
 
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-  );
+    final url = dotenv.env['SUPABASE_URL'];
+    final anon = dotenv.env['SUPABASE_ANON_KEY'];
 
-  await Firebase.initializeApp();
+    if (url == null || url.isEmpty) {
+      throw Exception('ENV_MISSING: SUPABASE_URL');
+    }
+    if (anon == null || anon.isEmpty) {
+      throw Exception('ENV_MISSING: SUPABASE_ANON_KEY');
+    }
+
+    // 2) Supabase
+    await withTimeout(
+      Supabase.initialize(url: url, anonKey: anon),
+      'Supabase.initialize',
+    );
+
+    // 3) Firebase
+    await withTimeout(Firebase.initializeApp(), 'Firebase.initializeApp');
+  } on Exception catch (e) {
+    // 실패해도 앱은 띄우고, 원인만 표시
+    bootError = e.toString();
+  }
 
   runApp(
     MultiProvider(
@@ -37,13 +63,14 @@ void main() async {
         ChangeNotifierProvider(create: (_) => FeedProvider()),
         ChangeNotifierProvider(create: (_) => TodakProvider()),
       ],
-      child: const TodakmoreApp(),
+      child: TodakmoreApp(bootError: bootError),
     ),
   );
 }
 
 class TodakmoreApp extends StatelessWidget {
-  const TodakmoreApp({super.key});
+  final String? bootError;
+  const TodakmoreApp({super.key, this.bootError});
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +82,7 @@ class TodakmoreApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'NotoSansKR',
       ),
-      initialRoute: '/',
+      initialRoute: bootError == null ? '/' : '/boot-error',
       routes: {
         '/': (_) => const SplashScreen(),
         '/login' : (_) => const LoginScreen(),
@@ -73,6 +100,32 @@ class TodakmoreApp extends StatelessWidget {
         }
         return null;
       },
+    );
+  }
+}
+
+class BootErrorScreen extends StatelessWidget {
+  final String message;
+  const BootErrorScreen({super.key, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            child: SelectableText(
+              '부팅 중 오류가 발생했어요.\n\n'
+                  '$message\n\n'
+                  '가장 흔한 원인:\n'
+                  '1) .env가 앱 번들에 포함되지 않음 (pubspec.yaml assets)\n'
+                  '2) APP_ENV_FILE 시크릿 내용 형식 오류 (KEY=VALUE)\n'
+                  '3) iOS Firebase plist 누락 (GoogleService-Info.plist)\n',
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

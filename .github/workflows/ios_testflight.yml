@@ -91,11 +91,6 @@ jobs:
             exit 1
           fi
 
-      - name: Build iOS (no codesign)
-        run: |
-          flutter precache --ios
-          flutter build ios --no-codesign --release
-
       # 9) IPA 빌드
       #    - build-number는 매번 증가해야 해서 GITHUB_RUN_NUMBER 사용
       - name: Build IPA

@@ -89,6 +89,23 @@ jobs:
             exit 1
           fi
 
+      - name: Force iOS deployment target (Runner.xcodeproj = 15.0)
+        run: |
+          set -e
+          PBXPROJ="ios/Runner.xcodeproj/project.pbxproj"
+      
+          if [ ! -f "$PBXPROJ" ]; then
+            echo "project.pbxproj not found"
+            exit 1
+          fi
+      
+          # 11~12 같은 옛값 전부 15.0으로 통일
+          perl -pi -e "s/IPHONEOS_DEPLOYMENT_TARGET = 1[0-4]\.[0-9];/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g" $PBXPROJ
+      
+          echo "==== Deployment Targets ===="
+          grep -n "IPHONEOS_DEPLOYMENT_TARGET" $PBXPROJ | head -n 20
+
+
       - name: Force code signing (Release.xcconfig)
         run: |
           set -e

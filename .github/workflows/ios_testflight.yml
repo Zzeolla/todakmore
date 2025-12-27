@@ -91,24 +91,20 @@ jobs:
             exit 1
           fi
 
-      - name: Debug - show build command inputs
-        run: |
-          echo "TEAM=U4J3G589PV"
-          echo "BUNDLE=${{ vars.BUNDLE_ID }}"
-          ls -al ios || true
-      - name: Debug - list provisioning profiles
-        run: |
-          ls -al "$HOME/Library/MobileDevice/Provisioning Profiles" || true
-
       # 9) IPA 빌드
       #    - build-number는 매번 증가해야 해서 GITHUB_RUN_NUMBER 사용
-      - name: Build IPA
+      - name: Build IPA (App Store)
+        env:
+          DEVELOPMENT_TEAM: U4J3G589PV
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER: todakmoreProvisioningProfile
         run: |
           flutter build ipa \
             --release \
             --export-method app-store \
             --build-number $GITHUB_RUN_NUMBER
-            --xcargs "DEVELOPMENT_TEAM=U4J3G589PV CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY='Apple Distribution' PROVISIONING_PROFILE_SPECIFIER=todakmoreProvisioningProfile"
+
 
       # 10) 생성된 IPA 경로 찾기
       - name: Locate IPA

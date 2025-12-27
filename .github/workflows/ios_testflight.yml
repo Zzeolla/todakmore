@@ -57,6 +57,10 @@ jobs:
           echo "----- Apple Distribution only -----"
           security find-identity -p codesigning -v | grep -E "Apple Distribution|iPhone Distribution" || true
 
+      - name: Debug - list profiles via App Store Connect API
+        run: |
+          echo "BUNDLE_ID=${{ vars.BUNDLE_ID }}"
+
       # 7) 프로비저닝 프로파일 자동 다운로드 (App Store용)
       - name: Download provisioning profiles
         uses: apple-actions/download-provisioning-profiles@v1

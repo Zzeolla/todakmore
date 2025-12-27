@@ -63,12 +63,7 @@ jobs:
       - name: Ensure iOS project files exist
         run: |
           flutter create . --platforms=ios
-      
-      - name: Build iOS (no codesign)
-        run: |
-          flutter precache --ios
-          flutter build ios --no-codesign --release
-
+          
       # ✅ Podfile에 iOS 15.0 강제 (없으면 추가, 있으면 15.0으로 교체)
       - name: Force iOS deployment target (Podfile = 15.0)
         run: |

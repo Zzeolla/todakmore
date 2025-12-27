@@ -41,7 +41,7 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.0'
+          xcode-version: '16.2'
 
       # 6) 배포 인증서(p12) 설치
       - name: Import code signing certs

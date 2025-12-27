@@ -60,43 +60,14 @@ jobs:
           api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
 
-      - name: Ensure Podfile (iOS 15.0)
+      - name: Ensure iOS project files exist
         run: |
-          cat > ios/Podfile <<'POD'
-          platform :ios, '15.0'
-          ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+          flutter create . --platforms=ios
       
-          use_frameworks! :linkage => :static
-          use_modular_headers!
-      
-          require_relative 'Flutter/podhelper'
-          flutter_ios_podfile_setup
-      
-          target 'Runner' do
-            flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-          end
-      
-          post_install do |installer|
-            installer.pods_project.targets.each do |t|
-              t.build_configurations.each do |config|
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
-              end
-            end
-          end
-          POD
-
-      - name: Prepare iOS build artifacts (generate podhelper)
+      - name: Build iOS (no codesign)
         run: |
           flutter precache --ios
           flutter build ios --no-codesign --release
-
-      # 8) CocoaPods
-      - name: Pod install (clean)
-        run: |
-          cd ios
-          rm -rf Pods Podfile.lock .symlinks Frameworks
-          pod install --repo-update
-          cd ..
 
       # 9) IPA 빌드
       #    - build-number는 매번 증가해야 해서 GITHUB_RUN_NUMBER 사용

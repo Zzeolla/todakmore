@@ -85,12 +85,17 @@ jobs:
           end
           POD
 
+      - name: Prepare iOS build artifacts (generate podhelper)
+        run: |
+          flutter precache --ios
+          flutter build ios --no-codesign --release
+
       # 8) CocoaPods
       - name: Pod install (clean)
         run: |
           cd ios
           rm -rf Pods Podfile.lock .symlinks Frameworks
-          pod install
+          pod install --repo-update
           cd ..
 
       # 9) IPA 빌드

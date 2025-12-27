@@ -91,6 +91,13 @@ jobs:
             exit 1
           fi
 
+      - name: Debug - show build command inputs
+        run: |
+          echo "TEAM=U4J3G589PV"
+          echo "BUNDLE=${{ vars.BUNDLE_ID }}"
+          ls -al ios || true
+
+
       # 9) IPA 빌드
       #    - build-number는 매번 증가해야 해서 GITHUB_RUN_NUMBER 사용
       - name: Build IPA
